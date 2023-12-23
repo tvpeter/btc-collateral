@@ -29,27 +29,22 @@ impl PartiesPublicKeys {
         let borrower_pubkey_len = format!("{:x}", &self.borrower_pubkey.to_string().len()/2);
         let borrower_pubkey_hex = hex::encode(self.borrower_pubkey.to_string());
         let lender_pubkey_len = format!("{:x}", &self.lender_pubkey.to_string().len()/2);
+
         let lender_pubkey_hex = hex::encode(self.lender_pubkey.to_string());
         let service_pubkey_len = format!("{:x}", &self.service_pubkey.to_string().len()/2);
         let service_pubkey_hex = hex::encode(self.service_pubkey.to_string());
-
         "52".to_string() + &borrower_pubkey_len + &borrower_pubkey_hex + &lender_pubkey_len + &lender_pubkey_hex + &service_pubkey_len + &service_pubkey_hex + "53ae"
     }
 
-
-    pub fn create_p2sh_address(&self) -> Result<Address, Error> {
+    pub fn create_p2sh_address(&self) -> Result<Address, String> {
         let binding = self.redeem_script_hex();
-        println!("redeem script: {:?}", binding);
         let redeemscript_bytes = binding.as_bytes();
         let derived_script = Script::from_bytes(redeemscript_bytes);
-        println!("derived script: {:?}", derived_script);
         let generated_address = Address::p2sh(derived_script, Network::Regtest);
-        
-        match generated_address {
-            Ok(p2sh_address) => Ok(p2sh_address),
-            Err(_) => Err(Error::UnrecognizedScript),
-        }
+        generated_address.map_err(|err| format!("Error creating p2sh address: {:?}", err))
     }
+    
+    
 
     pub fn print_address(&self) {
         let address = self.create_p2sh_address();
@@ -85,7 +80,7 @@ use super::*;
     )
     .expect("pubkey");
 
-    let service_pubkey = PublicKey::from_str("04e96e22004e3db93530de27ccddfdf1463975d2138ac018fc3e7ba1a2e5e0aad8e424d0b55e2436eb1d0dcd5cb2b8bcc6d53412c22f358de57803a6a655fbbd04").expect("pubkey");
+    let service_pubkey = PublicKey::from_str("03df154ebfcf29d29cc10d5c2565018bce2d9edbab267c31d2caf44a63056cf99f").expect("pubkey");
 
     let combined_keys = PartiesPublicKeys::new(borrower_pubkey, lender_pubkey, service_pubkey);
 

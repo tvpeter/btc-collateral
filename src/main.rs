@@ -14,7 +14,7 @@ fn main() {
     )
     .expect("pubkey");
 
-    let service_pubkey = PublicKey::from_str("04e96e22004e3db93530de27ccddfdf1463975d2138ac018fc3e7ba1a2e5e0aad8e424d0b55e2436eb1d0dcd5cb2b8bcc6d53412c22f358de57803a6a655fbbd04").expect("pubkey");
+    let service_pubkey = PublicKey::from_str("03df154ebfcf29d29cc10d5c2565018bce2d9edbab267c31d2caf44a63056cf99f").expect("pubkey");
 
     let combined_keys = PartiesPublicKeys::new(borrower_pubkey, lender_pubkey, service_pubkey);
 
