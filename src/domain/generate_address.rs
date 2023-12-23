@@ -1,7 +1,9 @@
 use hex;
-
 use bitcoin::{Address, Network, Script, PublicKey};
 use bitcoin::address::Error;
+
+use crate::utils::validate_publickeys::is_valid_pubkey;
+
 
 #[derive(Debug, Clone)]
 pub struct PartiesPublicKeys {
@@ -19,19 +21,35 @@ impl PartiesPublicKeys {
         }
     }
 
-    // validate each of the provided public keys
-    pub fn validate_keys(&self) -> bool {
-        todo!()
+
+    fn validate_publickeys(&self) {
+        if !is_valid_pubkey( &self.borrower_pubkey.to_bytes()) {
+            panic!("Invalid borrower public key");
+        }
+
+        if !is_valid_pubkey( &self.lender_pubkey.to_bytes()) {
+            panic!("Invalid lender public key");
+        }
+
+        if !is_valid_pubkey( &self.service_pubkey.to_bytes()) {
+            panic!("Invalid service public key");
+        }
     }
 
     //OP_2 [pubkey1] [pubkey2] [pubkey3] OP_3 OP_CHECKMULTISIG 
     pub fn redeem_script_hex(&self) -> String {
-        let borrower_pubkey_len = format!("{:x}", &self.borrower_pubkey.to_string().len()/2);
-        let borrower_pubkey_hex = hex::encode(self.borrower_pubkey.to_string());
-        let lender_pubkey_len = format!("{:x}", &self.lender_pubkey.to_string().len()/2);
+        self.validate_publickeys();
 
+        let borrower_pubkey_len = format!("{:x}", &self.borrower_pubkey.to_bytes().len());
+        let borrower_pubkey_hex = hex::encode(self.borrower_pubkey.to_string());
+
+        let key = self.borrower_pubkey.inner;
+        println!("pubkey: {:?}", key);
+
+        let lender_pubkey_len = format!("{:x}", &self.lender_pubkey.to_bytes().len());
         let lender_pubkey_hex = hex::encode(self.lender_pubkey.to_string());
-        let service_pubkey_len = format!("{:x}", &self.service_pubkey.to_string().len()/2);
+        
+        let service_pubkey_len = format!("{:x}", &self.service_pubkey.to_bytes().len());
         let service_pubkey_hex = hex::encode(self.service_pubkey.to_string());
         "52".to_string() + &borrower_pubkey_len + &borrower_pubkey_hex + &lender_pubkey_len + &lender_pubkey_hex + &service_pubkey_len + &service_pubkey_hex + "53ae"
     }

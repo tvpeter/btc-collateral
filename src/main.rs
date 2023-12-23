@@ -1,4 +1,5 @@
 mod domain;
+mod utils;
 
 use std::str::FromStr;
 
@@ -18,13 +19,7 @@ fn main() {
 
     let combined_keys = PartiesPublicKeys::new(borrower_pubkey, lender_pubkey, service_pubkey);
 
-    // let redeem_script_hex = combined_keys.redeem_script_hex();
-
-    // println!("The redeem script hex: {:?}", redeem_script_hex);
-
-    let address = combined_keys.create_p2sh_address();
-
-    println!("p2sh address: {:?}", address);
+    combined_keys.print_address();
 
 }
 
