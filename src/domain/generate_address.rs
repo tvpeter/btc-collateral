@@ -1,10 +1,7 @@
-use std::fmt::format;
-
-use hex;
 use bitcoin::{Address, Network, Script, PublicKey};
 use bitcoin::address::Error;
 
-use crate::utils::validate_publickeys::{is_valid_pubkey, is_hex};
+use crate::utils::validate_publickeys::is_valid_pubkey;
 
 
 #[derive(Debug, Clone)]
@@ -23,7 +20,6 @@ impl PartiesPublicKeys {
         }
     }
 
-
     fn validate_publickeys(&self) {
         if !is_valid_pubkey( &self.borrower_pubkey.to_bytes()) {
             panic!("Invalid borrower public key");
@@ -38,19 +34,16 @@ impl PartiesPublicKeys {
         }
     }
 
-    //OP_2 [pubkey1] [pubkey2] [pubkey3] OP_3 OP_CHECKMULTISIG 
+
+    //OP_2  [pubkey1] [pubkey2] [pubkey3] OP_3 OP_CHECKMULTISIG 
     pub fn redeem_script_hex(&self) -> String {
         self.validate_publickeys();
 
         let borrower_pubkey_len = format!("{:x}", &self.borrower_pubkey.to_bytes().len());
-        let borrower_pubkey_hex = hex::encode(self.borrower_pubkey.to_string());
-
         let lender_pubkey_len = format!("{:x}", &self.lender_pubkey.to_bytes().len());
-        let lender_pubkey_hex = hex::encode(self.lender_pubkey.to_string());
-        
         let service_pubkey_len = format!("{:x}", &self.service_pubkey.to_bytes().len());
-        let service_pubkey_hex = hex::encode(self.service_pubkey.to_string());
-        "52".to_string() + &borrower_pubkey_len + &borrower_pubkey_hex + &lender_pubkey_len + &lender_pubkey_hex + &service_pubkey_len + &service_pubkey_hex + "53ae"
+
+        "52".to_string() + &borrower_pubkey_len + &self.borrower_pubkey.to_string() + &lender_pubkey_len + &self.lender_pubkey.to_string() + &service_pubkey_len + &self.service_pubkey.to_string() + "53ae"
     }
 
     pub fn create_p2sh_address(&self) -> Result<Address, String> {
@@ -67,7 +60,6 @@ impl PartiesPublicKeys {
         let redeem_script = Script::from_bytes(redeemscript_bytes);
         Address::p2wsh(redeem_script, Network::Regtest)
     }
-    
 
     pub fn print_addresses(&self) {
         let p2sh_address = self.create_p2sh_address();
@@ -100,15 +92,15 @@ use super::*;
 
    #[test]
    fn test_redeem_script_hex(){
-    let pubkey_string = "0347ff3dacd07a1f43805ec6808e801505a6e18245178609972a68afbc2777ff2b";
+    let pubkey_string = "02f0eaa04e609b0044ef1fe09a350dc4b744a5a8604a6fa77bc9bf6443ea50739f";
     let borrower_pubkey = PublicKey::from_str(pubkey_string).expect("pubkey");
 
     let lender_pubkey = PublicKey::from_str(
-        "02ba604e6ad9d3864eda8dc41c62668514ef7d5417d3b6db46e45cc4533bff001c",
+        "037c60db011a840523f216e7198054ef071c5acd3d4b466cf2658b7faf30c11e33",
     )
     .expect("pubkey");
 
-    let service_pubkey = PublicKey::from_str("03df154ebfcf29d29cc10d5c2565018bce2d9edbab267c31d2caf44a63056cf99f").expect("pubkey");
+    let service_pubkey = PublicKey::from_str("02ca49f36d3de1e135e033052611dd0873af55b57f07d5d0d1090ceb267ac34e6b").expect("pubkey");
 
     let combined_keys = PartiesPublicKeys::new(borrower_pubkey, lender_pubkey, service_pubkey);
 
