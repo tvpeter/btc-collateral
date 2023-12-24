@@ -1,8 +1,10 @@
+use std::fmt::format;
+
 use hex;
 use bitcoin::{Address, Network, Script, PublicKey};
 use bitcoin::address::Error;
 
-use crate::utils::validate_publickeys::is_valid_pubkey;
+use crate::utils::validate_publickeys::{is_valid_pubkey, is_hex};
 
 
 #[derive(Debug, Clone)]
@@ -43,9 +45,6 @@ impl PartiesPublicKeys {
         let borrower_pubkey_len = format!("{:x}", &self.borrower_pubkey.to_bytes().len());
         let borrower_pubkey_hex = hex::encode(self.borrower_pubkey.to_string());
 
-        let key = self.borrower_pubkey.inner;
-        println!("pubkey: {:?}", key);
-
         let lender_pubkey_len = format!("{:x}", &self.lender_pubkey.to_bytes().len());
         let lender_pubkey_hex = hex::encode(self.lender_pubkey.to_string());
         
@@ -62,11 +61,17 @@ impl PartiesPublicKeys {
         generated_address.map_err(|err| format!("Error creating p2sh address: {:?}", err))
     }
     
+    pub fn create_p2wsh_address(&self) -> Address {
+        let binding = self.redeem_script_hex();
+        let redeemscript_bytes = binding.as_bytes();
+        let redeem_script = Script::from_bytes(redeemscript_bytes);
+        Address::p2wsh(redeem_script, Network::Regtest)
+    }
     
 
-    pub fn print_address(&self) {
-        let address = self.create_p2sh_address();
-        let _derived_address = match address {
+    pub fn print_addresses(&self) {
+        let p2sh_address = self.create_p2sh_address();
+        let _derived_address = match p2sh_address {
             Ok(generated_address) => {
                 if generated_address.is_spend_standard() {
                     println!("P2SH address: {}", generated_address);
@@ -77,7 +82,12 @@ impl PartiesPublicKeys {
             }
             Err(_) => Err(Error::UnrecognizedScript),
         };
+
+        let p2wsh_address = self.create_p2wsh_address();
+        println!("P2WSH address: {:?}", p2wsh_address);
+
     }
+
 }
 
 

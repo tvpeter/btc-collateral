@@ -10,3 +10,6 @@ pub fn is_valid_pubkey(pubkey_bytes: &[u8]) -> bool {
     }
 }
 
+pub fn is_hex(s: &str) -> bool {
+    hex::decode(s).is_ok()
+}

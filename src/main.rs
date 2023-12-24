@@ -19,7 +19,7 @@ fn main() {
 
     let combined_keys = PartiesPublicKeys::new(borrower_pubkey, lender_pubkey, service_pubkey);
 
-    combined_keys.print_address();
+    combined_keys.print_addresses();
 
 }
 
