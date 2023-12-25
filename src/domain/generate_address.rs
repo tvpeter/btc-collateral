@@ -70,7 +70,7 @@ impl PartiesPublicKeys {
                 } else {
                     println!("{} is a non-standard address", generated_address);
                 }
-                Ok(())  // Returning Ok(()) to match the Result type
+                Ok(())  
             }
             Err(_) => Err(Error::UnrecognizedScript),
         };
@@ -88,28 +88,53 @@ mod tests {
 
 use std::str::FromStr;
 
+use bitcoin::AddressType;
+
 use super::*;
+
+fn valid_publickeys() -> PartiesPublicKeys {
+    PartiesPublicKeys {
+        borrower_pubkey: PublicKey::from_str("02f0eaa04e609b0044ef1fe09a350dc4b744a5a8604a6fa77bc9bf6443ea50739f").expect("invalid borrower pubkey"),
+        lender_pubkey: PublicKey::from_str("037c60db011a840523f216e7198054ef071c5acd3d4b466cf2658b7faf30c11e33").expect("invalid lender pubkey"),
+        service_pubkey: PublicKey::from_str("02ca49f36d3de1e135e033052611dd0873af55b57f07d5d0d1090ceb267ac34e6b").expect("invalid service pubkey"),
+    }
+}
 
    #[test]
    fn test_redeem_script_hex(){
-    let pubkey_string = "02f0eaa04e609b0044ef1fe09a350dc4b744a5a8604a6fa77bc9bf6443ea50739f";
-    let borrower_pubkey = PublicKey::from_str(pubkey_string).expect("Invalid borrower pubkey");
-
-    let lender_pubkey = PublicKey::from_str(
-        "037c60db011a840523f216e7198054ef071c5acd3d4b466cf2658b7faf30c11e33",
-    )
-    .expect("Invalid lender pubkey");
-
-    let service_pubkey = PublicKey::from_str("02ca49f36d3de1e135e033052611dd0873af55b57f07d5d0d1090ceb267ac34e6b").expect("Invalid service pubkey");
-
-    let combined_keys = PartiesPublicKeys::new(borrower_pubkey, lender_pubkey, service_pubkey);
-
-    let redeem_script_hex = combined_keys.redeem_script_hex();
-
-    println!("The redeem script hex: {:?}", redeem_script_hex);
-
+    let combined_keys = valid_publickeys();
+    assert_eq!(combined_keys.redeem_script_hex(), "522102f0eaa04e609b0044ef1fe09a350dc4b744a5a8604a6fa77bc9bf6443ea50739f21037c60db011a840523f216e7198054ef071c5acd3d4b466cf2658b7faf30c11e332102ca49f36d3de1e135e033052611dd0873af55b57f07d5d0d1090ceb267ac34e6b53ae");
    }
 
-   
-}
+   #[test]
+   fn test_validate_publickeys() {
+       let valid_instance = valid_publickeys();
+       assert!(std::panic::catch_unwind(|| valid_instance.validate_publickeys()).is_ok());
+   }
 
+   #[test]
+    fn test_create_p2sh_address() {
+        let valid_instance = valid_publickeys();
+        let result = valid_instance.create_p2sh_address();
+
+        assert!(result.is_ok());
+
+        let generated_address = result.unwrap();
+        assert_eq!(generated_address.network(), &Network::Regtest);
+        assert_eq!(generated_address.address_type(), Some(AddressType::P2sh))
+    }
+
+    #[test]
+    fn test_create_p2wsh_address() {
+        let valid_instance = valid_publickeys();
+        let result = valid_instance.create_p2wsh_address();
+
+        assert_eq!(result.network(), &Network::Regtest);
+        assert_eq!(result.address_type(), Some(AddressType::P2wsh));
+    }
+ 
+
+     
+}
+ 
+       
