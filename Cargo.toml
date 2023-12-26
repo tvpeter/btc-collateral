@@ -11,5 +11,10 @@ categories = ["asynchronous", "api-bindings", "web-programming::http-server"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+actix-web = "4.4.1"
 bitcoin = {version = "0.31.0", features = ["rand-std"]}
+config = "0.13.4"
 hex = "0.4.3"
+serde = {version = "1.0.193", features = ["derive"]}
+tokio = {version = "1.35.1", features = ["macros", "rt-multi-thread"]}
+

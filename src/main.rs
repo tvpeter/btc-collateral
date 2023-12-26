@@ -1,12 +1,14 @@
-mod domain;
-mod utils;
-
+use std::net::TcpListener;
 use std::str::FromStr;
-
 use bitcoin::PublicKey;
-use domain::generate_address::PartiesPublicKeys;
+use btc_collateral::{
+    startup::run,
+    config::Settings,
+    domain::generate_address::PartiesPublicKeys
+};
 
-fn main() {
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
     let pubkey_string = "02f0eaa04e609b0044ef1fe09a350dc4b744a5a8604a6fa77bc9bf6443ea50739f";
     let borrower_pubkey = PublicKey::from_str(pubkey_string).expect("invalid borrower pubkey");
 
@@ -22,6 +24,10 @@ fn main() {
 
     combined_keys.print_addresses();
 
+    let settings = Settings::get_configuration().expect("failed to read config");
+    let address = format!("127.0.0.1:{}", settings.application_port);
+    let listener = TcpListener::bind(address).expect("Failed to bind random port");
+    run(listener)?.await
 }
 
 

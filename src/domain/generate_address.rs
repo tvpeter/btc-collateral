@@ -1,8 +1,6 @@
 use bitcoin::{Address, Network, Script, PublicKey};
 use bitcoin::address::Error;
-
 use crate::utils::validate_publickeys::is_valid_pubkey;
-
 
 #[derive(Debug, Clone)]
 pub struct PartiesPublicKeys {
