@@ -1,0 +1,30 @@
+edition = "2021"
+hard_tabs = true
+merge_derives = true
+newline_style = "Unix"
+reorder_imports = true
+reorder_modules = true
+use_field_init_shorthand = true
+
+# -----------------------------------
+# Unstable options we would like to use in future
+# -----------------------------------
+
+#fn_single_line = true
+#format_strings = true
+#blank_lines_lower_bound = 1
+#group_imports = "One"
+#indent_style = "Block"
+#normalize_comments = true
+#normalize_doc_attributes = true
+#match_arm_blocks = true
+#reorder_impl_items = true
+#wrap_comments = true
+#where_single_line = true
+#blank_lines_lower_bound = 0
+#blank_lines_upper_bound = 1
+#imports_granularity = "Module"
+#group_imports = "StdExternalCrate"
+#reorder_impl_items = true
+#version = "Two"
+#struct_field_align_threshold = 20

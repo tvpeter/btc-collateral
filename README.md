@@ -19,7 +19,13 @@ The lending terms between the borrower and the lender are tendered to the servic
 $ git clone https://github.com/tvpeter/btc-collateral
 $ cd bitcoin-collateral
 ```
-2. Run unit and integration tests. Ensure all tests are passing before moving to the next step
+
+2. Run initial setup
+```sh
+$ make init
+```
+
+3. Run unit and integration tests. Ensure all tests are passing before moving to the next step
 ```sh
 $ cargo test
 Start the server

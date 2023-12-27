@@ -1,0 +1,5 @@
+make fmt && \
+make build && \
+make test && \
+make clippy \
+|| exit 1
