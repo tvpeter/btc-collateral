@@ -1,6 +1,4 @@
 use bitcoin::PublicKey;
-use std::str::FromStr;
-
 
 pub fn is_valid_pubkey(pubkey_bytes: &[u8]) -> bool {
     // Attempt to parse the public key
@@ -12,21 +10,18 @@ pub fn is_valid_pubkey(pubkey_bytes: &[u8]) -> bool {
     }
 }
 
-pub fn is_hex(s: &str) -> bool {
-    hex::decode(s).is_ok()
-}
-
 #[cfg(test)]
 mod test {
-    use super::*;
+	use std::str::FromStr;
+	use super::*;
 
     #[test]
     fn test_is_valid_pubkey(){
 
     let valid_pubkey = PublicKey::from_str("02ca49f36d3de1e135e033052611dd0873af55b57f07d5d0d1090ceb267ac34e6b").expect("invalid pubkey");
-    
+
     let invalid_pubkey = "02ca49f36d3de1e135e033052611dd0873af55b57f07d5d0d1090ceb267ac34e6b111".to_string();
-    
+
     assert!(is_valid_pubkey(&valid_pubkey.to_bytes()));
 
     assert!(!is_valid_pubkey(&invalid_pubkey.into_bytes()));
