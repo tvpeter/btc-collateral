@@ -1,4 +1,6 @@
+use crate::utils::validate_address::{self, validate_address};
 use bitcoin::address::{NetworkChecked, NetworkUnchecked};
+use bitcoin::hashes::Hash;
 use bitcoin::{
 	absolute::LockTime,
 	blockdata::{
@@ -10,8 +12,9 @@ use bitcoin::{
 use bitcoin::{Address, Network};
 use std::str::FromStr;
 
-const MAX_AMOUNT: u32 = 5;
+const MAX_AMOUNT: u32 = 20;
 
+#[derive(Debug, Clone)]
 pub struct TxnOutpoint {
 	pub txid: Txid,
 	pub vout: u32,
@@ -46,12 +49,14 @@ impl TxOutput {
 	}
 }
 
+#[derive(Debug, Clone)]
 pub struct FundingTxn {
 	address: String,
 	amount: u32,
 	version: i32,
 	inputs: Vec<TxnOutpoint>,
 	network: Network,
+	change_address: String,
 }
 
 impl FundingTxn {
@@ -61,6 +66,7 @@ impl FundingTxn {
 		version: i32,
 		inputs: Vec<TxnOutpoint>,
 		network: Network,
+		change_address: String,
 	) -> Self {
 		Self {
 			address,
@@ -68,10 +74,11 @@ impl FundingTxn {
 			version,
 			inputs,
 			network,
+			change_address,
 		}
 	}
 
-	pub fn validate_inputs(&self) -> ScriptBuf {
+	pub fn validate_inputs(&self) -> (Address, Address) {
 		match self.version {
 			1 => Version::ONE,
 			2 => Version::TWO,
@@ -80,16 +87,21 @@ impl FundingTxn {
 
 		//check the outpoints are valid
 
-		let address = self.validate_address();
+		let receiving_address = validate_address(&self.address, self.network);
 
-		address.script_pubkey()
+		let change_address = validate_address(&self.change_address, self.network);
+
+		(receiving_address, change_address)
 	}
 
-	pub fn validate_address(&self) -> Address {
-		let unchecked_address: Address<NetworkUnchecked> = self.address.parse().unwrap();
+	pub fn create_unsigned_p2pkh_txn(&self) {
+		let (receiving_address, change_address) = self.validate_inputs();
 
-		unchecked_address
-			.require_network(self.network)
-			.expect("Error decoding address for given network")
+		let receiving_script_pubkey_hash = receiving_address.script_pubkey();
+		let change_script_pubkey_hash = change_address.script_pubkey();
+		let input_count = self.inputs.len().to_be_bytes();
+		println!("The input count: {:?}", input_count);
+
+		todo!();
 	}
 }

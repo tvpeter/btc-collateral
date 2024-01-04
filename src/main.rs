@@ -1,3 +1,4 @@
+use actix_web::body::MessageBody;
 use bitcoin::PublicKey;
 use btc_collateral::{config::Settings, domain::generate_address::PartiesPublicKeys, startup::run};
 use std::net::TcpListener;
