@@ -1,3 +1,4 @@
+use crate::config::set_network;
 use crate::utils::validate_publickeys::is_valid_pubkey;
 use bitcoin::address::Error;
 use bitcoin::{Address, Network, PublicKey, Script};
@@ -58,7 +59,7 @@ impl PartiesPublicKeys {
 		let binding = self.redeem_script_hex();
 		let redeemscript_bytes = binding.as_bytes();
 		let derived_script = Script::from_bytes(redeemscript_bytes);
-		let generated_address = Address::p2sh(derived_script, Network::Regtest);
+		let generated_address = Address::p2sh(derived_script, set_network());
 		generated_address.map_err(|err| format!("Error creating p2sh address: {:?}", err))
 	}
 
@@ -66,7 +67,7 @@ impl PartiesPublicKeys {
 		let binding = self.redeem_script_hex();
 		let redeemscript_bytes = binding.as_bytes();
 		let redeem_script = Script::from_bytes(redeemscript_bytes);
-		Address::p2wsh(redeem_script, Network::Regtest)
+		Address::p2wsh(redeem_script, set_network())
 	}
 
 	pub fn print_addresses(&self) {
@@ -91,9 +92,9 @@ impl PartiesPublicKeys {
 #[cfg(test)]
 mod tests {
 
-	use std::str::FromStr;
-
+	use crate::config::set_network;
 	use bitcoin::AddressType;
+	use std::str::FromStr;
 
 	use super::*;
 
@@ -130,11 +131,12 @@ mod tests {
 	fn test_create_p2sh_address() {
 		let valid_instance = valid_publickeys();
 		let result = valid_instance.create_p2sh_address();
+		let network = set_network();
 
 		assert!(result.is_ok());
 
 		let generated_address = result.unwrap();
-		assert_eq!(generated_address.network(), &Network::Regtest);
+		assert_eq!(generated_address.network(), &network);
 		assert_eq!(generated_address.address_type(), Some(AddressType::P2sh))
 	}
 
@@ -142,8 +144,9 @@ mod tests {
 	fn test_create_p2wsh_address() {
 		let valid_instance = valid_publickeys();
 		let result = valid_instance.create_p2wsh_address();
+		let network = set_network();
 
-		assert_eq!(result.network(), &Network::Regtest);
+		assert_eq!(result.network(), &network);
 		assert_eq!(result.address_type(), Some(AddressType::P2wsh));
 	}
 }

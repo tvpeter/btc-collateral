@@ -1,10 +1,16 @@
+use crate::config::environment_vars;
 use bitcoin::{Amount, Txid};
 use bitcoincore_rpc::{Auth, Client, Error, RpcApi};
 
 pub fn connect_bitcoind() -> Client {
+	let env_vars = environment_vars();
+	let rpc_url = env_vars.get("node_url").unwrap();
+	let rpc_username = env_vars.get("rpc_username").unwrap();
+	let rpc_password = env_vars.get("rpc_password").unwrap();
+
 	let rpc_client = Client::new(
-		"http://localhost:18443",
-		Auth::UserPass("bitcoin".to_string(), "bitcoin".to_string()),
+		&rpc_url,
+		Auth::UserPass(rpc_username.to_string(), rpc_password.to_string()),
 	)
 	.unwrap();
 

@@ -1,3 +1,4 @@
+use crate::config::set_network;
 use crate::utils::validate_address::{self, validate_address};
 use bitcoin::address::{NetworkChecked, NetworkUnchecked};
 use bitcoin::hashes::Hash;
@@ -55,7 +56,6 @@ pub struct FundingTxn {
 	amount: u32,
 	version: i32,
 	inputs: Vec<TxnOutpoint>,
-	network: Network,
 	change_address: String,
 }
 
@@ -65,7 +65,6 @@ impl FundingTxn {
 		amount: u32,
 		version: i32,
 		inputs: Vec<TxnOutpoint>,
-		network: Network,
 		change_address: String,
 	) -> Self {
 		Self {
@@ -73,12 +72,13 @@ impl FundingTxn {
 			amount,
 			version,
 			inputs,
-			network,
 			change_address,
 		}
 	}
 
 	pub fn validate_inputs(&self) -> (Address, Address) {
+		let network = set_network();
+
 		match self.version {
 			1 => Version::ONE,
 			2 => Version::TWO,
@@ -87,9 +87,9 @@ impl FundingTxn {
 
 		//check the outpoints are valid
 
-		let receiving_address = validate_address(&self.address, self.network);
+		let receiving_address = validate_address(&self.address, network);
 
-		let change_address = validate_address(&self.change_address, self.network);
+		let change_address = validate_address(&self.change_address, network);
 
 		(receiving_address, change_address)
 	}
