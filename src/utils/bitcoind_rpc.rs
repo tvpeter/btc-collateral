@@ -1,6 +1,6 @@
 use crate::config::environment_vars;
-use bitcoin::{Amount, Txid};
-use bitcoincore_rpc::{Auth, Client, Error, RpcApi};
+use bitcoin::Txid;
+use bitcoincore_rpc::{Auth, Client, RpcApi};
 
 pub fn connect_bitcoind() -> Client {
 	let env_vars = environment_vars();
@@ -9,7 +9,7 @@ pub fn connect_bitcoind() -> Client {
 	let rpc_password = env_vars.get("rpc_password").unwrap();
 
 	let rpc_client = Client::new(
-		&rpc_url,
+		rpc_url,
 		Auth::UserPass(rpc_username.to_string(), rpc_password.to_string()),
 	)
 	.unwrap();
@@ -22,18 +22,17 @@ pub fn connect_bitcoind() -> Client {
 	rpc_client
 }
 
-pub fn get_outpoint_value(txid: Txid, vout: u32) -> f64 {
+pub fn get_outpoint_value(txid: Txid, vout: u32) -> Result<f64, String> {
 	let rpc = connect_bitcoind();
 
 	let outpoint_value = rpc.get_tx_out(&txid, vout, Some(false)).unwrap();
 
 	let result = match outpoint_value {
 		Some(amount) => amount,
-		None => panic!("Error getting transaction amount for: {:?}", &txid),
+		None => return Err(format!("Error getting UTXO value for for txid: {:?}", txid)),
 	};
 
-	let amount = result.value;
-	amount.to_btc()
+	Ok(result.value.to_btc())
 }
 
 #[cfg(test)]
@@ -47,8 +46,11 @@ mod test {
 		let txid =
 			Txid::from_str("641641b49c028c02d150619214d27d384235d69864268b128f7b4cc802eed172")
 				.expect("error getting transaction id");
-		let vout: u32 = 0;
+		let valid_vout: u32 = 0;
+		let invalid_vout: u32 = 1;
 
-		assert_eq!(get_outpoint_value(txid, vout), 1.56250000);
+		assert_eq!(get_outpoint_value(txid, valid_vout), Ok(1.56250000));
+		assert!(get_outpoint_value(txid, invalid_vout).is_err());
+
 	}
 }
