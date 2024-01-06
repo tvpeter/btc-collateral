@@ -51,6 +51,5 @@ mod test {
 
 		assert_eq!(get_outpoint_value(txid, valid_vout), Ok(1.56250000));
 		assert!(get_outpoint_value(txid, invalid_vout).is_err());
-
 	}
 }
