@@ -7,8 +7,7 @@ use bitcoin::{
 	blockdata::transaction::{OutPoint, Transaction, TxOut},
 	Amount, Txid,
 };
-use bitcoin::{ScriptBuf, Sequence, TxIn, Witness};
-use std::ptr::null;
+use bitcoin::{ScriptBuf, Sequence, TxIn, Witness, Wtxid};
 use std::str::FromStr;
 
 const MAX_AMOUNT: u32 = 20;
@@ -132,7 +131,7 @@ impl FundingTxn {
 		})
 	}
 
-	fn calculate_inputs(&self) -> Result<Vec<TxIn>,  String> {
+	fn calculate_inputs(&self) -> Result<Vec<TxIn>, String> {
 		let mut tx_inputs = Vec::new();
 		for tx_input in &self.inputs {
 			let outpoint = OutPoint {
@@ -187,5 +186,16 @@ impl FundingTxn {
 		};
 		tx_outputs.push(output2);
 		Ok(tx_outputs)
+	}
+
+	fn create_txn(&self) -> Result<(Txid, Wtxid), String> {
+		let txn = self.construct_trxn();
+
+		let result_txn = match txn {
+			Ok(txn) => txn,
+			Err(err) => return Err(err),
+		};
+
+		Ok((result_txn.txid(), result_txn.wtxid()))
 	}
 }
