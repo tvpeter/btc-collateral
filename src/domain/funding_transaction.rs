@@ -2,16 +2,13 @@ use crate::config::set_network;
 use crate::utils::bitcoind_rpc::get_outpoint_value;
 use crate::utils::validate_address::validate_address;
 use bitcoin::absolute::LockTime;
-use bitcoin::address::{NetworkChecked, NetworkUnchecked};
 use bitcoin::transaction::Version;
 use bitcoin::{
-	blockdata::{
-		transaction::{OutPoint, Transaction, TxIn, TxOut},
-		FeeRate,
-	},
-	Amount, ScriptBuf, Sequence, Txid, Witness,
+	blockdata::transaction::{OutPoint, Transaction, TxOut},
+	Amount, Txid,
 };
-use bitcoin::{Address, Network};
+use bitcoin::{ScriptBuf, Sequence, TxIn, Witness};
+use std::ptr::null;
 use std::str::FromStr;
 
 const MAX_AMOUNT: u32 = 20;
@@ -96,8 +93,6 @@ impl FundingTxn {
 	}
 
 	pub fn construct_trxn(&self) -> Result<Transaction, String> {
-		let network = set_network();
-
 		match self.version {
 			1 => Version::ONE,
 			2 => Version::TWO,
@@ -107,10 +102,11 @@ impl FundingTxn {
 		let mut input_total = 0.0;
 		match self.input_total() {
 			Ok(amount) => {
-				if amount < self.amount.into() {
-					return Err(format!(
+				if amount < self.amount as f64 {
+					return Err(
 						"The given UTXO set do not have enough value for this transaction"
-					));
+							.to_string(),
+					);
 				} else {
 					input_total = amount;
 				}
@@ -118,36 +114,67 @@ impl FundingTxn {
 			Err(error) => return Err(format!("{:?}", error)),
 		};
 
-		let tx_outputs = match self.calculate_outputs(network, input_total) {
+		let tx_outputs = match self.calculate_outputs(input_total) {
 			Ok(value) => value,
-			Err(value) => return value,
+			Err(error) => return Err(format!("{:?}", error)),
 		};
 
-		let txn = Transaction {
-			version: bitcoin::transaction::Version(self.version),
-			lock_time: LockTime::ZERO,
-			input: self.inputs,
-			output: tx_outputs,
+		let tx_inputs = match self.calculate_inputs() {
+			Ok(value) => value,
+			Err(value) => return Err(value),
 		};
+
+		Ok(Transaction {
+			version: Version(self.version),
+			lock_time: LockTime::ZERO,
+			input: tx_inputs,
+			output: tx_outputs,
+		})
 	}
 
-	fn calculate_outputs(
-		&self,
-		network: Network,
-		input_total: f64,
-	) -> Result<Vec<TxOut>, Result<Transaction, String>> {
+	fn calculate_inputs(&self) -> Result<Vec<TxIn>,  String> {
+		let mut tx_inputs = Vec::new();
+		for tx_input in &self.inputs {
+			let outpoint = OutPoint {
+				txid: tx_input.txid,
+				vout: tx_input.vout,
+			};
+
+			let script_sig = ScriptBuf::from_hex("");
+
+			let derived_sig = match script_sig {
+				Ok(sig) => sig,
+				Err(error) => return Err(format!("Error converting from hex: {:?}", error)),
+			};
+
+			let witness_data = Witness::new();
+
+			let input_detail = TxIn {
+				previous_output: outpoint,
+				script_sig: derived_sig,
+				sequence: Sequence::MAX,
+				witness: witness_data,
+			};
+
+			tx_inputs.push(input_detail);
+		}
+		Ok(tx_inputs)
+	}
+
+	fn calculate_outputs(&self, input_total: f64) -> Result<Vec<TxOut>, String> {
+		let network = set_network();
 		let receiving_address = match validate_address(&self.address, network) {
 			Ok(address) => address,
-			Err(err) => return Err(Err(format!("{:?}", err))),
+			Err(err) => return Err(format!("{:?}", err)),
 		};
 		let change_address = match validate_address(&self.change_address, network) {
 			Ok(address) => address,
-			Err(error) => return Err(Err(format!("{:?}", error))),
+			Err(error) => return Err(format!("{:?}", error)),
 		};
 		let receiving_script_pubkey_hash = receiving_address.script_pubkey();
 		let change_script_pubkey_hash = change_address.script_pubkey();
-		let balance = input_total - self.amount;
-		let change_amount = balance - FEE_RATE;
+		let balance = input_total as u64 - self.amount;
+		let change_amount = balance as f64 - FEE_RATE;
 		let mut tx_outputs = Vec::new();
 		let output1 = TxOut {
 			value: Amount::from_int_btc(self.amount),
@@ -155,14 +182,10 @@ impl FundingTxn {
 		};
 		tx_outputs.push(output1);
 		let output2 = TxOut {
-			value: Amount::from_int_btc(change_amount),
+			value: Amount::from_int_btc(change_amount as u64),
 			script_pubkey: change_script_pubkey_hash,
 		};
 		tx_outputs.push(output2);
 		Ok(tx_outputs)
-	}
-
-	pub fn create_unsigned_p2pkh_txn(&self) {
-		todo!();
 	}
 }
