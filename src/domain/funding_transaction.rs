@@ -7,7 +7,7 @@ use bitcoin::{
 	blockdata::transaction::{OutPoint, Transaction, TxOut},
 	Amount, Txid,
 };
-use bitcoin::{ScriptBuf, Sequence, TxIn, Witness, Wtxid};
+use bitcoin::{ScriptBuf, Sequence, TxIn, Witness};
 use std::str::FromStr;
 
 const MAX_AMOUNT: u32 = 20;
@@ -158,7 +158,6 @@ impl FundingTxn {
 		let change_script_pubkey_hash = change_address.script_pubkey();
 		let balance = input_total - self.amount;
 		let change_amount = balance - FEE_RATE;
-		println!("amount: {:?}", self.amount as u64);
 		let mut tx_outputs = Vec::new();
 		let output1 = TxOut {
 			value: Amount::from_int_btc(self.amount as u64),
@@ -173,7 +172,7 @@ impl FundingTxn {
 		Ok(tx_outputs)
 	}
 
-	fn create_txn(&self) -> Result<(Txid, Wtxid), String> {
+	fn create_txn(&self) -> Result<Transaction, String> {
 		let txn = self.construct_trxn();
 
 		let result_txn = match txn {
@@ -181,16 +180,12 @@ impl FundingTxn {
 			Err(err) => return Err(err),
 		};
 
-		Ok((result_txn.txid(), result_txn.wtxid()))
+		Ok(result_txn)
 	}
 }
 
 #[cfg(test)]
 mod test {
-	use bitcoin::{hashes::Hash, hex::DisplayHex};
-	use bitcoincore_rpc::RawTx;
-	use hex::ToHex;
-
 	use super::*;
 
 	#[test]
@@ -221,7 +216,7 @@ mod test {
 			Err(error) => panic!("{:?}", error),
 		}
 
-		let funding_txn = FundingTxn::new(
+		let new_txn = FundingTxn::new(
 			"2My2o4T4ong11WcGnyyNDqaqoU3NhS1kagJ".to_owned(),
 			2.56,
 			2,
@@ -229,20 +224,16 @@ mod test {
 			"bcrt1qq935ysfqnlj9k4jd88hjj093xu00s9ge0a7l5m".to_owned(),
 		);
 
-		let input_total = funding_txn.input_total();
+		let construct_txn = new_txn.create_txn();
 
-		let input = match input_total {
-			Ok(input) => input,
-			Err(err) => panic!("{:?}", err),
-		};
-
-		let txn = funding_txn.create_txn();
-
-		let txns = match txn {
+		let txn = match construct_txn {
 			Ok(ntxs) => ntxs,
 			Err(error) => panic!("Error creating transaction: {:?}", error),
 		};
 
-		println!("txid: {:?}", txns.0.as_raw_hash().to_string().raw_hex());
+        assert_eq!(txn.version, Version::TWO);
+        assert!(!txn.is_coinbase());
+        assert!(!txn.is_lock_time_enabled());
+
 	}
 }
