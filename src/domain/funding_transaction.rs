@@ -20,38 +20,22 @@ pub struct TxnOutpoint {
 }
 
 impl TxnOutpoint {
-	fn create_outpoint(txid: String, vout: u32) -> OutPoint {
-		OutPoint {
-			txid: Txid::from_str(&txid).expect("Please supply a valid transaction id"),
-			vout,
-		}
-	}
-}
+	fn create_outpoint(txid: String, vout: u32) -> Result<Self, String> {
+		let given_txid = Txid::from_str(&txid);
 
-pub struct TxOutput {
-	//supply amount in BTC
-	amount: Amount,
-	address: String,
-}
+		let txid = match given_txid {
+			Ok(txid) => txid,
+			Err(err) => return Err(format!("Error parsing given txid id: {}", err)),
+		};
 
-impl TxOutput {
-	fn new(amount: u32, address: String) -> Self {
-		if amount > MAX_AMOUNT {
-			panic!("The amount supplied exceed maximum allowed amount");
-		}
-		let tx_amount = Amount::from_btc(amount.into()).expect("supply valid transaction amount");
-
-		Self {
-			amount: tx_amount,
-			address,
-		}
+		Ok(Self { txid, vout })
 	}
 }
 
 #[derive(Debug, Clone)]
 pub struct FundingTxn {
 	address: String,
-	amount: u64,
+	amount: f64,
 	version: i32,
 	inputs: Vec<TxnOutpoint>,
 	change_address: String,
@@ -60,7 +44,7 @@ pub struct FundingTxn {
 impl FundingTxn {
 	fn new(
 		address: String,
-		amount: u64,
+		amount: f64,
 		version: i32,
 		inputs: Vec<TxnOutpoint>,
 		change_address: String,
@@ -172,11 +156,12 @@ impl FundingTxn {
 		};
 		let receiving_script_pubkey_hash = receiving_address.script_pubkey();
 		let change_script_pubkey_hash = change_address.script_pubkey();
-		let balance = input_total as u64 - self.amount;
-		let change_amount = balance as f64 - FEE_RATE;
+		let balance = input_total - self.amount;
+		let change_amount = balance - FEE_RATE;
+		println!("amount: {:?}", self.amount as u64);
 		let mut tx_outputs = Vec::new();
 		let output1 = TxOut {
-			value: Amount::from_int_btc(self.amount),
+			value: Amount::from_int_btc(self.amount as u64),
 			script_pubkey: receiving_script_pubkey_hash,
 		};
 		tx_outputs.push(output1);
@@ -197,5 +182,67 @@ impl FundingTxn {
 		};
 
 		Ok((result_txn.txid(), result_txn.wtxid()))
+	}
+}
+
+#[cfg(test)]
+mod test {
+	use bitcoin::{hashes::Hash, hex::DisplayHex};
+	use bitcoincore_rpc::RawTx;
+	use hex::ToHex;
+
+	use super::*;
+
+	#[test]
+	fn test_create_txn() {
+		let mut txinputs = Vec::new();
+
+		let outpoint1 = TxnOutpoint::create_outpoint(
+			"0de1989117a98627fb8d350d4e568c8ff7ee7e627463a7631ff754680424290b".to_owned(),
+			0,
+		);
+
+		match outpoint1 {
+			Ok(outpoint) => {
+				txinputs.push(outpoint);
+			}
+			Err(error) => panic!("{:?}", error),
+		}
+
+		let outpoint2 = TxnOutpoint::create_outpoint(
+			"a8a1ef53cd9e25277880f097ab1203e8a98edbf99e3c03272a43dbe36d0dd2dc".to_owned(),
+			0,
+		);
+
+		match outpoint2 {
+			Ok(outpoint) => {
+				txinputs.push(outpoint);
+			}
+			Err(error) => panic!("{:?}", error),
+		}
+
+		let funding_txn = FundingTxn::new(
+			"2My2o4T4ong11WcGnyyNDqaqoU3NhS1kagJ".to_owned(),
+			2.56,
+			2,
+			txinputs,
+			"bcrt1qq935ysfqnlj9k4jd88hjj093xu00s9ge0a7l5m".to_owned(),
+		);
+
+		let input_total = funding_txn.input_total();
+
+		let input = match input_total {
+			Ok(input) => input,
+			Err(err) => panic!("{:?}", err),
+		};
+
+		let txn = funding_txn.create_txn();
+
+		let txns = match txn {
+			Ok(ntxs) => ntxs,
+			Err(error) => panic!("Error creating transaction: {:?}", error),
+		};
+
+		println!("txid: {:?}", txns.0.as_raw_hash().to_string().raw_hex());
 	}
 }
