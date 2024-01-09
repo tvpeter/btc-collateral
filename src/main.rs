@@ -10,10 +10,9 @@ use std::str::FromStr;
 async fn main() -> std::io::Result<()> {
 	dotenv().ok();
 
-	bitcoind_rpc::connect_bitcoind();
-
 	let settings = Settings::get_configuration().expect("failed to read config");
 	let address = format!("127.0.0.1:{}", settings.application_port);
 	let listener = TcpListener::bind(address).expect("Failed to bind random port");
 	run(listener)?.await
 }
+

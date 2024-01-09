@@ -405,6 +405,7 @@ dependencies = [
  "config",
  "dotenv",
  "hex",
+ "round",
  "serde",
  "tokio",
 ]
@@ -1136,6 +1137,12 @@ dependencies = [
  "bitflags 1.3.2",
  "serde",
 ]
+
+[[package]]
+name = "round"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b02705db4fa872ae37e464fc803b7ffa574e6c4a5e112c52a82550f9dd63b657"
 
 [[package]]
 name = "rust-ini"

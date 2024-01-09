@@ -8,6 +8,7 @@ use bitcoin::{
 	Amount, Txid,
 };
 use bitcoin::{ScriptBuf, Sequence, TxIn, Witness};
+use round::round_down;
 use std::str::FromStr;
 
 const MAX_AMOUNT: u32 = 20;
@@ -85,7 +86,7 @@ impl FundingTxn {
 		let mut input_total = 0.0;
 		match self.input_total() {
 			Ok(amount) => {
-				if amount < self.amount as f64 {
+				if amount < self.amount {
 					return Err(
 						"The given UTXO set do not have enough value for this transaction"
 							.to_string(),
@@ -156,16 +157,30 @@ impl FundingTxn {
 		};
 		let receiving_script_pubkey_hash = receiving_address.script_pubkey();
 		let change_script_pubkey_hash = change_address.script_pubkey();
-		let balance = input_total - self.amount;
-		let change_amount = balance - FEE_RATE;
+
+        let input_amount = round_down(input_total, 8);
+		let balance = round_down(input_amount - self.amount, 8);
+		let change_amount = round_down(balance - FEE_RATE, 8);
+
+        let amount_in_hex = match Amount::from_btc(self.amount) {
+            Ok(amt) => amt,
+            Err(error) => return Err(format!("Error parsing given amount: {:?}", error)),
+        };
+
+        let change_amount_hex = match Amount::from_btc(change_amount) {
+            Ok(amt) => amt,
+            Err(err) => return Err(format!("Error parsing change amount: {:?}", err)),
+        };
+
+
 		let mut tx_outputs = Vec::new();
 		let output1 = TxOut {
-			value: Amount::from_int_btc(self.amount as u64),
+			value: amount_in_hex,
 			script_pubkey: receiving_script_pubkey_hash,
 		};
 		tx_outputs.push(output1);
 		let output2 = TxOut {
-			value: Amount::from_int_btc(change_amount as u64),
+			value: change_amount_hex,
 			script_pubkey: change_script_pubkey_hash,
 		};
 		tx_outputs.push(output2);
@@ -186,7 +201,9 @@ impl FundingTxn {
 
 #[cfg(test)]
 mod test {
-	use super::*;
+	use bitcoincore_rpc::RawTx;
+
+use super::*;
 
 	#[test]
 	fn test_create_txn() {
@@ -231,9 +248,10 @@ mod test {
 			Err(error) => panic!("Error creating transaction: {:?}", error),
 		};
 
-        assert_eq!(txn.version, Version::TWO);
-        assert!(!txn.is_coinbase());
-        assert!(!txn.is_lock_time_enabled());
-
+		assert_eq!(txn.version, Version::TWO);
+		assert!(!txn.is_coinbase());
+		assert!(!txn.is_lock_time_enabled());
+        assert!(!txn.raw_hex().is_empty());
+        println!("raw tx: {}", txn.raw_hex());
 	}
 }
