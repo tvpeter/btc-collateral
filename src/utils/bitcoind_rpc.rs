@@ -1,4 +1,4 @@
-use crate::config::environment_vars;
+use crate::constants::environment_vars;
 use bitcoin::Txid;
 use bitcoincore_rpc::{Auth, Client, RpcApi};
 

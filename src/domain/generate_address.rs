@@ -1,7 +1,7 @@
-use crate::config::set_network;
+use crate::constants::set_network;
 use crate::utils::validate_publickeys::is_valid_pubkey;
 use bitcoin::address::Error;
-use bitcoin::{Address, Network, PublicKey, Script};
+use bitcoin::{Address, PublicKey, Script};
 
 #[derive(Debug, Clone)]
 pub struct PartiesPublicKeys {
@@ -92,7 +92,6 @@ impl PartiesPublicKeys {
 #[cfg(test)]
 mod tests {
 
-	use crate::config::set_network;
 	use bitcoin::AddressType;
 	use std::str::FromStr;
 

@@ -23,8 +23,9 @@ pub fn validate_address(address: &str, network: Network) -> Result<Address, Stri
 
 #[cfg(test)]
 mod test {
+	use crate::constants::set_network;
+
 	use super::*;
-	use crate::config::set_network;
 
 	#[test]
 	fn test_validate_address() {

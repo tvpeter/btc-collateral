@@ -1,4 +1,4 @@
-use crate::config::set_network;
+use crate::constants::set_network;
 use crate::utils::bitcoind_rpc::get_outpoint_value;
 use crate::utils::validate_address::validate_address;
 use bitcoin::absolute::LockTime;
@@ -11,8 +11,8 @@ use bitcoin::{ScriptBuf, Sequence, TxIn, Witness};
 use round::round_down;
 use std::str::FromStr;
 
-const MAX_AMOUNT: u32 = 20;
 const FEE_RATE: f64 = 0.00072;
+const PRECISION: i32 = 8;
 
 #[derive(Debug, Clone)]
 pub struct TxnOutpoint {
@@ -158,20 +158,19 @@ impl FundingTxn {
 		let receiving_script_pubkey_hash = receiving_address.script_pubkey();
 		let change_script_pubkey_hash = change_address.script_pubkey();
 
-        let input_amount = round_down(input_total, 8);
-		let balance = round_down(input_amount - self.amount, 8);
-		let change_amount = round_down(balance - FEE_RATE, 8);
+		let input_amount = round_down(input_total, PRECISION);
+		let balance = round_down(input_amount - self.amount, PRECISION);
+		let change_amount = round_down(balance - FEE_RATE, PRECISION);
 
-        let amount_in_hex = match Amount::from_btc(self.amount) {
-            Ok(amt) => amt,
-            Err(error) => return Err(format!("Error parsing given amount: {:?}", error)),
-        };
+		let amount_in_hex = match Amount::from_btc(self.amount) {
+			Ok(amt) => amt,
+			Err(error) => return Err(format!("Error parsing given amount: {:?}", error)),
+		};
 
-        let change_amount_hex = match Amount::from_btc(change_amount) {
-            Ok(amt) => amt,
-            Err(err) => return Err(format!("Error parsing change amount: {:?}", err)),
-        };
-
+		let change_amount_hex = match Amount::from_btc(change_amount) {
+			Ok(amt) => amt,
+			Err(err) => return Err(format!("Error parsing change amount: {:?}", err)),
+		};
 
 		let mut tx_outputs = Vec::new();
 		let output1 = TxOut {
@@ -203,7 +202,7 @@ impl FundingTxn {
 mod test {
 	use bitcoincore_rpc::RawTx;
 
-use super::*;
+	use super::*;
 
 	#[test]
 	fn test_create_txn() {
@@ -251,7 +250,7 @@ use super::*;
 		assert_eq!(txn.version, Version::TWO);
 		assert!(!txn.is_coinbase());
 		assert!(!txn.is_lock_time_enabled());
-        assert!(!txn.raw_hex().is_empty());
-        println!("raw tx: {}", txn.raw_hex());
+		assert!(!txn.raw_hex().is_empty());
+		println!("raw tx: {}", txn.raw_hex());
 	}
 }
