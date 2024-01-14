@@ -29,3 +29,21 @@ pub async fn get_mempool_feerate() -> Result<MempoolSpaceFeeRate, String> {
 		Err(err) => Err(format!("Error serializing fees: {:?}", err)),
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn test_get_feerate() {
+		let data = get_mempool_feerate();
+
+		let fees = match data {
+			Ok(fees) => fees,
+			Err(error) => panic!("{:?}", error),
+		};
+
+		assert_ne!(fees.fastest_fee, fees.economy_fee);
+		assert!(fees.fastest_fee > fees.half_hour_fee);
+	}
+}
