@@ -4,15 +4,15 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MempoolSpaceFeeRate {
 	#[serde(rename = "fastestFee")]
-	fastest_fee: u16,
+	pub fastest_fee: usize,
 	#[serde(rename = "halfHourFee")]
-	half_hour_fee: u16,
+	pub half_hour_fee: usize,
 	#[serde(rename = "hourFee")]
-	hour_fee: u16,
+	pub hour_fee: usize,
 	#[serde(rename = "economyFee")]
-	economy_fee: u16,
+	pub economy_fee: usize,
 	#[serde(rename = "minimumFee")]
-	minimum_fee: u16,
+	pub minimum_fee: usize,
 }
 
 #[tokio::main]
@@ -43,6 +43,7 @@ mod tests {
 			Err(error) => panic!("{:?}", error),
 		};
 
+		println!("rates: {:?}", fees);
 		assert_ne!(fees.fastest_fee, fees.economy_fee);
 		assert!(fees.fastest_fee > fees.half_hour_fee);
 	}
