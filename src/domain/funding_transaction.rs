@@ -8,7 +8,7 @@ use bitcoin::{
 	blockdata::transaction::{OutPoint, Transaction, TxOut},
 	Amount, Txid,
 };
-use bitcoin::{Network, ScriptBuf, Sequence, TxIn, Witness};
+use bitcoin::{ScriptBuf, Sequence, TxIn, Witness};
 use round::round_down;
 use std::str::FromStr;
 
@@ -83,8 +83,6 @@ impl FundingTxn {
 			_ => return Err("Unknown transaction version".to_string()),
 		};
 
-		let lock_time = LockTime::ZERO;
-
 		let mut input_total = 0.0;
 		match self.input_total() {
 			Ok(amount) => {
@@ -100,12 +98,9 @@ impl FundingTxn {
 			Err(error) => return Err(format!("{:?}", error)),
 		};
 
-		let tx_inputs = match self.calculate_inputs() {
-			Ok(value) => value,
-			Err(value) => return Err(value),
-		};
+		let tx_inputs = self.calculate_inputs()?;
 
-		let fees = self.calculate_fees(&lock_time, tx_inputs.clone(), input_total);
+		let fees = self.calculate_fees(tx_inputs.clone(), input_total);
 
 		let fee_rate = match fees {
 			Ok(fee_rate) => fee_rate,
@@ -207,7 +202,6 @@ impl FundingTxn {
 
 	fn calculate_fees(
 		&self,
-		locktime: &LockTime,
 		tx_inputs: Vec<TxIn>,
 		input_total: f64,
 	) -> Result<f64, String> {
@@ -218,7 +212,7 @@ impl FundingTxn {
 
 		let initial_transaction = Transaction {
 			version: Version(self.version),
-			lock_time: *locktime,
+			lock_time: LockTime::ZERO,
 			input: tx_inputs,
 			output: tx_outputs,
 		};
@@ -312,7 +306,7 @@ mod test {
 
 		let inputs = new_txn.calculate_inputs().unwrap();
 		let computed_fees = new_txn
-			.calculate_fees(&LockTime::ZERO, inputs, input_total)
+			.calculate_fees(inputs, input_total)
 			.unwrap();
 
 		let v_size = txn.vsize();
