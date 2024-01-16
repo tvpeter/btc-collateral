@@ -144,21 +144,13 @@ impl FundingTxn {
 
 	fn calculate_outputs(&self, input_total: f64, fees: f64) -> Result<Vec<TxOut>, String> {
 		let network = set_network();
-		let receiving_address = match validate_address(&self.address, network) {
-			Ok(address) => address,
-			Err(err) => return Err(format!("{:?}", err)),
-		};
-		let change_address = match validate_address(&self.change_address, network) {
-			Ok(address) => address,
-			Err(error) => return Err(format!("{:?}", error)),
-		};
+		let receiving_address = validate_address(&self.address, network)?;
+		let change_address = validate_address(&self.change_address, network)?;
+			
 		let receiving_script_pubkey_hash = receiving_address.script_pubkey();
 		let change_script_pubkey_hash = change_address.script_pubkey();
 
-		let (amount_in_hex, change_amount_hex) = match self.input_amounts(fees, input_total) {
-			Ok(amounts) => amounts,
-			Err(err) => return Err(err),
-		};
+		let (amount_in_hex, change_amount_hex) = self.input_amounts(fees, input_total)?;
 
 		let mut tx_outputs = Vec::new();
 		let output1 = TxOut {
@@ -205,10 +197,7 @@ impl FundingTxn {
 		tx_inputs: Vec<TxIn>,
 		input_total: f64,
 	) -> Result<f64, String> {
-		let tx_outputs = match self.calculate_outputs(input_total, 0.0) {
-			Ok(value) => value,
-			Err(error) => return Err(format!("{:?}", error)),
-		};
+		let tx_outputs = self.calculate_outputs(input_total, 0.0)?;
 
 		let initial_transaction = Transaction {
 			version: Version(self.version),
