@@ -133,18 +133,11 @@ impl FundingTxn {
 				vout: tx_input.vout,
 			};
 
-			let script_sig = ScriptBuf::from_hex("");
-
-			let derived_sig = match script_sig {
-				Ok(sig) => sig,
-				Err(error) => return Err(format!("Error converting from hex: {:?}", error)),
-			};
-
 			let witness_data = Witness::new();
 
 			let input_detail = TxIn {
 				previous_output: outpoint,
-				script_sig: derived_sig,
+				script_sig: ScriptBuf::new(),
 				sequence: Sequence::MAX,
 				witness: witness_data,
 			};
