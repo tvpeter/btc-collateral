@@ -65,12 +65,8 @@ impl FundingTxn {
 
 		for input in inputs {
 			let outpoint_value = get_outpoint_value(input.txid, input.vout);
-			let value = match outpoint_value {
-				Ok(amount) => amount,
-				Err(err) => return Err(format!("{:?}", err)),
-			};
-
-			inputs_total += value;
+            let utxo_amount = outpoint_value?;
+			inputs_total += utxo_amount;
 		}
 
 		Ok(inputs_total)
@@ -100,17 +96,9 @@ impl FundingTxn {
 
 		let tx_inputs = self.calculate_inputs()?;
 
-		let fees = self.calculate_fees(tx_inputs.clone(), input_total);
+		let fees = self.calculate_fees(tx_inputs.clone(), input_total)?;
 
-		let fee_rate = match fees {
-			Ok(fee_rate) => fee_rate,
-			Err(error) => return Err(error),
-		};
-
-		let tx_outputs = match self.calculate_outputs(input_total, fee_rate) {
-			Ok(value) => value,
-			Err(error) => return Err(format!("{:?}", error)),
-		};
+        let tx_outputs = self.calculate_outputs(input_total, fees)?;
 
 		Ok(Transaction {
 			version: Version(self.version),
@@ -182,14 +170,9 @@ impl FundingTxn {
 	}
 
 	fn create_txn(&self) -> Result<Transaction, String> {
-		let txn = self.construct_trxn();
+		let txn = self.construct_trxn()?;
 
-		let result_txn = match txn {
-			Ok(txn) => txn,
-			Err(err) => return Err(err),
-		};
-
-		Ok(result_txn)
+		Ok(txn)
 	}
 
 	fn calculate_fees(
@@ -211,13 +194,9 @@ impl FundingTxn {
 
 		// worse-case size for a signature is 72-bytes
 		let final_size = txn_initial_size + (input_length * 72);
-		let fees = get_mempool_feerate();
-		let fee_rate = match fees {
-			Ok(fees) => fees,
-			Err(error) => return Err(format!("{:?}", error)),
-		};
+		let fees = get_mempool_feerate()?;
 
-		let total_fees = fee_rate.fastest_fee * final_size;
+		let total_fees = fees.fastest_fee * final_size;
 		let fee_rate = Amount::from_sat(total_fees.try_into().unwrap());
 
 		Ok(fee_rate.to_btc())
@@ -277,6 +256,8 @@ mod test {
 			Err(error) => panic!("Error creating transaction: {:?}", error),
 		};
 
+        println!("txn: {}", txn.raw_hex());
+        
 		assert_eq!(txn.version, Version::TWO);
 		assert!(!txn.is_coinbase());
 		assert!(!txn.is_lock_time_enabled());
@@ -313,4 +294,5 @@ mod test {
 
 		assert_eq!(computed_fees, fees_in_btc)
 	}
+
 }
