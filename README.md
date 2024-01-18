@@ -11,23 +11,37 @@ The lending terms between the borrower and the lender are tendered to the servic
 ## Required Dependencies
 
 - Rust v1.74.1
+- Bitcoind
 
 ## How to Run the Application
 
 1. Clone the repository and change to the cloned directory
-```sh
-$ git clone https://github.com/tvpeter/btc-collateral
-$ cd bitcoin-collateral
-```
 
-2. Run initial setup
-```sh
-$ make init
-```
+    ```sh
+    $ git clone https://github.com/tvpeter/btc-collateral
+    $ cd bitcoin-collateral
+    ```
+2. Rename `.env.example` to `.env`
 
-3. Run unit and integration tests. Ensure all tests are passing before moving to the next step
-```sh
-$ cargo test
-Start the server
-$ cargo run
-```
+3. Run and connect `Bitcoind`to the application
+    
+    After installing [Bitcoind](https://github.com/bitcoin/bitcoin/tree/master/doc), update your `.env` 
+    with the nodes `RPC username, password and port`.
+
+4. Run initial setup
+    ```sh
+    $ make init
+    ```
+
+5. Run unit and integration tests. Ensure all tests are passing before moving to the next step
+    ```sh
+    $ cargo test
+    Start the server
+    $ cargo run
+    ```
+
+## Third-party Services
+
+1. Mempool.space API for Fees Rates
+
+    `https://mempool.space/api/v1/fees/recommended`
