@@ -21,7 +21,7 @@ pub struct TxnOutpoint {
 }
 
 impl TxnOutpoint {
-	fn create_outpoint(txid: String, vout: u32) -> Result<Self, String> {
+	pub fn create_outpoint(txid: String, vout: u32) -> Result<Self, String> {
 		let given_txid = Txid::from_str(&txid);
 
 		let txid = match given_txid {
@@ -43,7 +43,7 @@ pub struct FundingTxn {
 }
 
 impl FundingTxn {
-	fn new(
+	pub fn new(
 		address: String,
 		amount: f64,
 		version: i32,
@@ -83,7 +83,7 @@ impl FundingTxn {
 			_ => return Err("Unknown transaction version".to_string()),
 		};
 
-		let mut input_total = 0.0;
+		let input_total: f64;
 		match self.input_total() {
 			Ok(amount) => {
 				if amount < self.amount {
@@ -145,7 +145,7 @@ impl FundingTxn {
 		Ok(tx_inputs)
 	}
 
-	fn calculate_outputs(&self, input_total: f64) -> Result<Vec<TxOut>, String> {
+	pub fn calculate_outputs(&self, input_total: f64) -> Result<Vec<TxOut>, String> {
 		let network = set_network();
 		let receiving_address = match validate_address(&self.address, network) {
 			Ok(address) => address,
@@ -186,7 +186,7 @@ impl FundingTxn {
 		Ok(tx_outputs)
 	}
 
-	fn create_txn(&self) -> Result<Transaction, String> {
+	pub fn create_txn(&self) -> Result<Transaction, String> {
 		let txn = self.construct_trxn();
 
 		let result_txn = match txn {
