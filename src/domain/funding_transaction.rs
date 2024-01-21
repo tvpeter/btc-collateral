@@ -21,7 +21,7 @@ pub struct TxnOutpoint {
 }
 
 impl TxnOutpoint {
-	fn create_outpoint(txid: String, vout: u32) -> Result<Self, String> {
+	pub fn create_outpoint(txid: String, vout: u32) -> Result<Self, String> {
 		let given_txid = Txid::from_str(&txid);
 
 		let txid = match given_txid {
@@ -43,7 +43,7 @@ pub struct FundingTxn {
 }
 
 impl FundingTxn {
-	fn new(
+	pub fn new(
 		address: String,
 		amount: f64,
 		version: i32,
@@ -65,7 +65,7 @@ impl FundingTxn {
 
 		for input in inputs {
 			let outpoint_value = get_outpoint_value(input.txid, input.vout);
-            let utxo_amount = outpoint_value?;
+			let utxo_amount = outpoint_value?;
 			inputs_total += utxo_amount;
 		}
 
@@ -79,7 +79,7 @@ impl FundingTxn {
 			_ => return Err("Unknown transaction version".to_string()),
 		};
 
-		let mut input_total = 0.0;
+		let input_total: f64;
 		match self.input_total() {
 			Ok(amount) => {
 				if amount < self.amount {
@@ -98,7 +98,7 @@ impl FundingTxn {
 
 		let fees = self.calculate_fees(tx_inputs.clone(), input_total)?;
 
-        let tx_outputs = self.calculate_outputs(input_total, fees)?;
+		let tx_outputs = self.calculate_outputs(input_total, fees)?;
 
 		Ok(Transaction {
 			version: Version(self.version),
@@ -134,7 +134,7 @@ impl FundingTxn {
 		let network = set_network();
 		let receiving_address = validate_address(&self.address, network)?;
 		let change_address = validate_address(&self.change_address, network)?;
-			
+
 		let receiving_script_pubkey_hash = receiving_address.script_pubkey();
 		let change_script_pubkey_hash = change_address.script_pubkey();
 
@@ -169,17 +169,13 @@ impl FundingTxn {
 		Ok((amount_in_hex, change_amount_hex))
 	}
 
-	fn create_txn(&self) -> Result<Transaction, String> {
+	pub fn create_txn(&self) -> Result<Transaction, String> {
 		let txn = self.construct_trxn()?;
 
 		Ok(txn)
 	}
 
-	fn calculate_fees(
-		&self,
-		tx_inputs: Vec<TxIn>,
-		input_total: f64,
-	) -> Result<f64, String> {
+	fn calculate_fees(&self, tx_inputs: Vec<TxIn>, input_total: f64) -> Result<f64, String> {
 		let tx_outputs = self.calculate_outputs(input_total, 0.0)?;
 
 		let initial_transaction = Transaction {
@@ -256,8 +252,8 @@ mod test {
 			Err(error) => panic!("Error creating transaction: {:?}", error),
 		};
 
-        println!("txn: {}", txn.raw_hex());
-        
+		println!("txn: {}", txn.raw_hex());
+
 		assert_eq!(txn.version, Version::TWO);
 		assert!(!txn.is_coinbase());
 		assert!(!txn.is_lock_time_enabled());
@@ -275,9 +271,7 @@ mod test {
 		let txn = new_txn.create_txn().unwrap();
 
 		let inputs = new_txn.calculate_inputs().unwrap();
-		let computed_fees = new_txn
-			.calculate_fees(inputs, input_total)
-			.unwrap();
+		let computed_fees = new_txn.calculate_fees(inputs, input_total).unwrap();
 
 		let v_size = txn.vsize();
 		let fee_rate = get_mempool_feerate().unwrap();
@@ -294,5 +288,4 @@ mod test {
 
 		assert_eq!(computed_fees, fees_in_btc)
 	}
-
 }
