@@ -1,6 +1,6 @@
 use bitcoin::{
-    absolute::LockTime, transaction::Version, Amount, OutPoint, ScriptBuf, Sequence, Transaction,
-    TxIn, TxOut, Witness,
+	absolute::LockTime, transaction::Version, Amount, OutPoint, ScriptBuf, Sequence, Transaction,
+	TxIn, TxOut, Witness,
 };
 use round::round_down;
 
@@ -11,6 +11,10 @@ use super::{
 use crate::{
     constants::set_network,
     domain::funding_transaction::{TxnOutpoint, PRECISION},
+};
+use crate::{
+	constants::set_network,
+	domain::funding_transaction::{TxnOutpoint, PRECISION},
 };
 
 pub fn get_outpoints_total(inputs: &Vec<TxnOutpoint>) -> Result<f64, String> {
@@ -90,23 +94,23 @@ pub trait Txn {
         let receiving_script_pubkey_hash = receiving_address.script_pubkey();
         let change_script_pubkey_hash = change_address.script_pubkey();
 
-        Ok((receiving_script_pubkey_hash, change_script_pubkey_hash))
-    }
+		Ok((receiving_script_pubkey_hash, change_script_pubkey_hash))
+	}
 
-    fn hex_amounts(amount: f64, fees: f64, input_total: f64) -> Result<(Amount, Amount), String> {
-        let input_amount = round_down(input_total, PRECISION);
-        let balance = round_down(input_amount - amount, PRECISION);
-        let change_amount = round_down(balance - fees, PRECISION);
-        let amount_in_hex = match Amount::from_btc(amount) {
-            Ok(amt) => amt,
-            Err(error) => return Err(format!("Error parsing given amount: {:?}", error)),
-        };
-        let change_amount_hex = match Amount::from_btc(change_amount) {
-            Ok(amt) => amt,
-            Err(err) => return Err(format!("Error parsing change amount: {:?}", err)),
-        };
-        Ok((amount_in_hex, change_amount_hex))
-    }
+	fn hex_amounts(amount: f64, fees: f64, input_total: f64) -> Result<(Amount, Amount), String> {
+		let input_amount = round_down(input_total, PRECISION);
+		let balance = round_down(input_amount - amount, PRECISION);
+		let change_amount = round_down(balance - fees, PRECISION);
+		let amount_in_hex = match Amount::from_btc(amount) {
+			Ok(amt) => amt,
+			Err(error) => return Err(format!("Error parsing given amount: {:?}", error)),
+		};
+		let change_amount_hex = match Amount::from_btc(change_amount) {
+			Ok(amt) => amt,
+			Err(err) => return Err(format!("Error parsing change amount: {:?}", err)),
+		};
+		Ok((amount_in_hex, change_amount_hex))
+	}
 }
 
 #[cfg(test)]
