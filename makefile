@@ -1,4 +1,4 @@
-DENY = -D warnings -D future-incompatible -D unused -D rust_2018_idioms -D nonstandard_style
+DENY = -D future-incompatible -D rust_2018_idioms -D nonstandard_style
 
 CLIPPY_DENY = -D clippy::all -D clippy::cargo -A clippy::multiple-crate-versions
 

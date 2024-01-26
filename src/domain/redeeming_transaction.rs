@@ -1,15 +1,9 @@
 use crate::domain::funding_transaction::TxnOutpoint;
 use crate::utils::transaction_utils::{get_outpoints_total, Txn};
 use bitcoin::absolute::LockTime;
-use bitcoin::bip32::Xpub;
-use bitcoin::blockdata::fee_rate;
-use bitcoin::psbt::Input;
 use bitcoin::transaction::Version;
 use bitcoin::{Psbt, Transaction, TxOut};
 use std::collections::BTreeMap;
-use std::str::FromStr;
-
-pub const PRECISION: i32 = 8;
 
 #[derive(Debug, Clone)]
 pub struct RedeemingTxnPSBT {
@@ -110,7 +104,6 @@ impl Txn for RedeemingTxnPSBT {}
 mod tests {
 	use super::RedeemingTxnPSBT;
 	use crate::domain::funding_transaction::TxnOutpoint;
-	use bitcoincore_rpc::RawTx;
 
 	fn redeem_txn() -> RedeemingTxnPSBT {
 		let tx_input = vec![TxnOutpoint::create_outpoint(
