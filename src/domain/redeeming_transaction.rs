@@ -15,7 +15,7 @@ pub struct RedeemingTxnPSBT {
 }
 
 impl RedeemingTxnPSBT {
-	fn new(
+	pub fn new(
 		receiving_address: String,
 		amount: f64,
 		inputs: Vec<TxnOutpoint>,
@@ -30,7 +30,7 @@ impl RedeemingTxnPSBT {
 	}
 
 	pub fn construct_trxn(&self) -> Result<Transaction, String> {
-		let mut input_total = 0.0;
+		let input_total;
 		match get_outpoints_total(&self.inputs) {
 			Ok(amount) => {
 				if amount < self.amount {
@@ -84,7 +84,7 @@ impl RedeemingTxnPSBT {
 		Ok(tx_outputs)
 	}
 
-	fn create_psbt(&self) -> Result<Psbt, String> {
+	pub fn create_psbt(&self) -> Result<Psbt, String> {
 		let unsigned_txn = self.construct_trxn()?;
 		Ok(Psbt {
 			unsigned_tx: unsigned_txn,
@@ -119,7 +119,7 @@ mod tests {
 			"bcrt1q8ucxfsyajsdghspzpn8mx8m7gyfv0c8jfn60m7".to_string(),
 		)
 	}
-
+	
 	#[test]
 	fn test_create_psbt() {
 		let redeem_txn = redeem_txn();

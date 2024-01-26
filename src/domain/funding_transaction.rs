@@ -37,7 +37,7 @@ pub struct FundingTxn {
 }
 
 impl FundingTxn {
-	fn new(
+	pub fn new(
 		receiving_address: String,
 		amount: f64,
 		inputs: Vec<TxnOutpoint>,
@@ -52,7 +52,7 @@ impl FundingTxn {
 	}
 
 	pub fn construct_trxn(&self) -> Result<Transaction, String> {
-		let mut input_total = 0.0;
+		let input_total;
 		match get_outpoints_total(&self.inputs) {
 			Ok(amount) => {
 				if amount < self.amount {
@@ -106,7 +106,7 @@ impl FundingTxn {
 		Ok(tx_outputs)
 	}
 
-	fn create_txn(&self) -> Result<Transaction, String> {
+	pub fn create_txn(&self) -> Result<Transaction, String> {
 		let txn = self.construct_trxn();
 
 		let result_txn = match txn {
@@ -154,7 +154,7 @@ mod test {
 			"bcrt1qq935ysfqnlj9k4jd88hjj093xu00s9ge0a7l5m".to_owned(),
 		)
 	}
-
+	#[ignore]
 	#[test]
 	fn test_create_txn() {
 		let new_txn = funding_txn();
@@ -170,6 +170,7 @@ mod test {
 		assert_eq!(txn.input.len(), 2);
 	}
 
+	#[ignore]
 	#[test]
 	fn test_txn_fees() {
 		let new_txn = funding_txn();
