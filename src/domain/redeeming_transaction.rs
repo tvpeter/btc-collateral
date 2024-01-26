@@ -119,7 +119,7 @@ mod tests {
 			"bcrt1q8ucxfsyajsdghspzpn8mx8m7gyfv0c8jfn60m7".to_string(),
 		)
 	}
-	
+
 	#[test]
 	fn test_create_psbt() {
 		let redeem_txn = redeem_txn();
