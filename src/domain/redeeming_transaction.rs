@@ -68,7 +68,7 @@ impl RedeemingTxnPSBT {
 			RedeemingTxnPSBT::derive_script_pubkeys(&self.receiving_address, &self.change_address)?;
 
 		let (amount_in_hex, change_amount_hex) =
-			RedeemingTxnPSBT::hex_amounts(self.amount, fees, input_total)?;
+			RedeemingTxnPSBT::amount_in_hex(self.amount, fees, input_total)?;
 
 		let mut tx_outputs = Vec::new();
 		let output1 = TxOut {

@@ -86,7 +86,7 @@ pub trait Txn {
 		Ok((receiving_script_pubkey_hash, change_script_pubkey_hash))
 	}
 
-	fn hex_amounts(amount: f64, fees: f64, input_total: f64) -> Result<(Amount, Amount), String> {
+	fn amount_in_hex(amount: f64, fees: f64, input_total: f64) -> Result<(Amount, Amount), String> {
 		let input_amount = round_down(input_total, PRECISION);
 		let balance = round_down(input_amount - amount, PRECISION);
 		let change_amount = round_down(balance - fees, PRECISION);

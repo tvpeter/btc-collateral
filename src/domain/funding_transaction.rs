@@ -67,7 +67,7 @@ impl FundingTxn {
 			FundingTxn::derive_script_pubkeys(&self.receiving_address, &self.change_address)?;
 
 		let (amount_in_hex, change_amount_hex) =
-			FundingTxn::hex_amounts(self.amount, fees, input_total)?;
+			FundingTxn::amount_in_hex(self.amount, fees, input_total)?;
 
 		let mut tx_outputs = Vec::new();
 		let output1 = TxOut {
