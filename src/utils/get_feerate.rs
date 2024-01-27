@@ -34,6 +34,7 @@ pub async fn get_mempool_feerate() -> Result<MempoolSpaceFeeRate, String> {
 mod tests {
 	use super::*;
 
+	#[ignore]
 	#[test]
 	fn test_get_feerate() {
 		let data = get_mempool_feerate();
