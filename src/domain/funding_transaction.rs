@@ -1,38 +1,15 @@
 use crate::utils::transaction_utils::{get_outpoints_total, Txn};
 use bitcoin::absolute::LockTime;
+use bitcoin::blockdata::transaction::{OutPoint, Transaction, TxOut};
 use bitcoin::transaction::Version;
-use bitcoin::{
-	blockdata::transaction::{Transaction, TxOut},
-	Txid,
-};
-use std::str::FromStr;
 
 pub const PRECISION: i32 = 8;
-
-#[derive(Debug, Clone)]
-pub struct TxnOutpoint {
-	pub txid: Txid,
-	pub vout: u32,
-}
-
-impl TxnOutpoint {
-	pub fn create_outpoint(txid: String, vout: u32) -> Result<Self, String> {
-		let given_txid = Txid::from_str(&txid);
-
-		let txid = match given_txid {
-			Ok(txid) => txid,
-			Err(err) => return Err(format!("Error parsing given txid id: {}", err)),
-		};
-
-		Ok(Self { txid, vout })
-	}
-}
 
 #[derive(Debug, Clone)]
 pub struct FundingTxn {
 	receiving_address: String,
 	amount: f64,
-	inputs: Vec<TxnOutpoint>,
+	inputs: Vec<OutPoint>,
 	change_address: String,
 }
 
@@ -40,7 +17,7 @@ impl FundingTxn {
 	pub fn new(
 		receiving_address: String,
 		amount: f64,
-		inputs: Vec<TxnOutpoint>,
+		inputs: Vec<OutPoint>,
 		change_address: String,
 	) -> Self {
 		Self {
@@ -105,24 +82,15 @@ impl FundingTxn {
 		tx_outputs.push(output2);
 		Ok(tx_outputs)
 	}
-
-	pub fn create_txn(&self) -> Result<Transaction, String> {
-		let txn = self.construct_trxn();
-
-		let result_txn = match txn {
-			Ok(txn) => txn,
-			Err(err) => return Err(err),
-		};
-
-		Ok(result_txn)
-	}
 }
 
 impl Txn for FundingTxn {}
 
 #[cfg(test)]
 mod test {
-	use bitcoin::Amount;
+	use std::str::FromStr;
+
+	use bitcoin::{Amount, Txid};
 	use bitcoincore_rpc::RawTx;
 	use round::round_down;
 
@@ -133,18 +101,18 @@ mod test {
 	fn funding_txn() -> FundingTxn {
 		let mut txinputs = Vec::new();
 
-		let outpoint1 = TxnOutpoint::create_outpoint(
-			"0de1989117a98627fb8d350d4e568c8ff7ee7e627463a7631ff754680424290b".to_owned(),
+		let outpoint1 = OutPoint::new(
+			Txid::from_str("c770d364d87768dcf0778bf48f095c753e838329d6cc7a3b4fc759317d4efd08")
+				.unwrap(),
 			0,
-		)
-		.unwrap();
+		);
 		txinputs.push(outpoint1);
 
-		let outpoint2 = TxnOutpoint::create_outpoint(
-			"a8a1ef53cd9e25277880f097ab1203e8a98edbf99e3c03272a43dbe36d0dd2dc".to_owned(),
+		let outpoint2 = OutPoint::new(
+			Txid::from_str("641641b49c028c02d150619214d27d384235d69864268b128f7b4cc802eed172")
+				.unwrap(),
 			0,
-		)
-		.unwrap();
+		);
 		txinputs.push(outpoint2);
 
 		FundingTxn::new(
@@ -154,12 +122,9 @@ mod test {
 			"bcrt1qq935ysfqnlj9k4jd88hjj093xu00s9ge0a7l5m".to_owned(),
 		)
 	}
-	#[ignore]
 	#[test]
 	fn test_create_txn() {
-		let new_txn = funding_txn();
-
-		let txn = new_txn.create_txn().unwrap();
+		let txn = funding_txn().construct_trxn().unwrap();
 
 		println!("raw hex: {}", txn.raw_hex());
 		assert_eq!(txn.version, Version::TWO);
@@ -170,21 +135,20 @@ mod test {
 		assert_eq!(txn.input.len(), 2);
 	}
 
-	#[ignore]
 	#[test]
 	fn test_txn_fees() {
-		let new_txn = funding_txn();
-		let input_total = get_outpoints_total(&new_txn.inputs).unwrap();
+		let txn = funding_txn();
+		let input_total = get_outpoints_total(&txn.inputs).unwrap();
 
-		let txn = new_txn.create_txn().unwrap();
+		let txn_details = txn.construct_trxn().unwrap();
 
-		let inputs = FundingTxn::calculate_inputs(&new_txn.inputs).unwrap();
-		let tx_outputs = new_txn.calculate_outputs(input_total, 0.0).unwrap();
+		let inputs = FundingTxn::calculate_inputs(&txn.inputs).unwrap();
+		let tx_outputs = txn.calculate_outputs(input_total, 0.0).unwrap();
 		let computed_fees = FundingTxn::calculate_fees(tx_outputs, inputs).unwrap();
 
-		let v_size = txn.vsize();
+		let v_size = txn_details.vsize();
 		let fee_rate = get_mempool_feerate().unwrap();
-		let input_len = txn.input.len();
+		let input_len = txn_details.input.len();
 
 		let total_size = v_size + (input_len * 72);
 

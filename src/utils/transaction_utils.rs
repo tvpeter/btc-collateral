@@ -8,12 +8,9 @@ use super::{
 	bitcoind_rpc::get_outpoint_value, get_feerate::get_mempool_feerate,
 	validate_address::validate_address,
 };
-use crate::{
-	constants::set_network,
-	domain::funding_transaction::{TxnOutpoint, PRECISION},
-};
+use crate::{constants::set_network, domain::funding_transaction::PRECISION};
 
-pub fn get_outpoints_total(inputs: &Vec<TxnOutpoint>) -> Result<f64, String> {
+pub fn get_outpoints_total(inputs: &Vec<OutPoint>) -> Result<f64, String> {
 	let mut inputs_total: f64 = 0.0;
 
 	for input in inputs {
@@ -30,7 +27,7 @@ pub fn get_outpoints_total(inputs: &Vec<TxnOutpoint>) -> Result<f64, String> {
 }
 
 pub trait Txn {
-	fn calculate_inputs(inputs: &Vec<TxnOutpoint>) -> Result<Vec<TxIn>, String> {
+	fn calculate_inputs(inputs: &Vec<OutPoint>) -> Result<Vec<TxIn>, String> {
 		let mut tx_inputs = Vec::new();
 		for tx_input in inputs {
 			let outpoint = OutPoint {

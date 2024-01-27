@@ -1,6 +1,6 @@
-use crate::domain::funding_transaction::TxnOutpoint;
 use crate::utils::transaction_utils::{get_outpoints_total, Txn};
 use bitcoin::absolute::LockTime;
+use bitcoin::blockdata::transaction::OutPoint;
 use bitcoin::transaction::Version;
 use bitcoin::{Psbt, Transaction, TxOut};
 use std::collections::BTreeMap;
@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 pub struct RedeemingTxnPSBT {
 	receiving_address: String,
 	amount: f64,
-	inputs: Vec<TxnOutpoint>,
+	inputs: Vec<OutPoint>,
 	// we might charge a fee of 0.025% on the redemption amount
 	change_address: String,
 }
@@ -18,7 +18,7 @@ impl RedeemingTxnPSBT {
 	pub fn new(
 		receiving_address: String,
 		amount: f64,
-		inputs: Vec<TxnOutpoint>,
+		inputs: Vec<OutPoint>,
 		change_address: String,
 	) -> Self {
 		Self {
@@ -86,6 +86,7 @@ impl RedeemingTxnPSBT {
 
 	pub fn create_psbt(&self) -> Result<Psbt, String> {
 		let unsigned_txn = self.construct_trxn()?;
+
 		Ok(Psbt {
 			unsigned_tx: unsigned_txn,
 			xpub: Default::default(),
@@ -102,15 +103,17 @@ impl Txn for RedeemingTxnPSBT {}
 
 #[cfg(test)]
 mod tests {
+	use std::str::FromStr;
+
 	use super::RedeemingTxnPSBT;
-	use crate::domain::funding_transaction::TxnOutpoint;
+	use bitcoin::{blockdata::transaction::OutPoint, Txid};
 
 	fn redeem_txn() -> RedeemingTxnPSBT {
-		let tx_input = vec![TxnOutpoint::create_outpoint(
-			"a39122aefe9563c17426bd468d2b650467475ea4c3bb538d0091d2552f6468d3".to_owned(),
+		let tx_input = vec![OutPoint::new(
+			Txid::from_str("a39122aefe9563c17426bd468d2b650467475ea4c3bb538d0091d2552f6468d3")
+				.unwrap(),
 			1,
-		)
-		.unwrap()];
+		)];
 
 		RedeemingTxnPSBT::new(
 			"bcrt1qeygjhsgt5sumtlqnyfu58harh3737z96m0zmqv".to_string(),
