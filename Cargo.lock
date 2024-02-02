@@ -501,6 +501,8 @@ name = "btc_collateral"
 version = "0.1.0"
 dependencies = [
  "actix-web",
+ "anyhow",
+ "bdk",
  "bitcoin 0.31.1",
  "bitcoincore-rpc",
  "config",
@@ -509,6 +511,7 @@ dependencies = [
  "reqwest",
  "round",
  "serde",
+ "serde_json",
  "tokio",
  "wallet",
 ]
@@ -2221,6 +2224,7 @@ dependencies = [
  "anyhow",
  "bdk",
  "dotenv",
+ "serde",
 ]
 
 [[package]]
