@@ -1,30 +1,35 @@
 use anyhow::Result;
+use bdk::blockchain::ElectrumBlockchain;
 use bdk::database::SqliteDatabase;
+use bdk::electrum_client::Client;
 use bdk::keys::{
 	bip39::{Language, Mnemonic, WordCount},
 	DerivableKey, ExtendedKey, GeneratableKey, GeneratedKey,
 };
 use bdk::template::Bip84;
-use bdk::wallet::AddressIndex;
-use bdk::{bitcoin::Network, Wallet};
+use bdk::{bitcoin::Network, SyncOptions, Wallet};
 use bdk::{miniscript, KeychainKind};
 use std::path::Path;
 
-pub fn create_wallet() -> Result<(), anyhow::Error> {
-	let network = Network::Regtest; // Or this can be Network::Bitcoin, Network::Signet or Network::Regtest
-
-	// Generate fresh mnemonic
+/// Generates a 12 word mnemonic
+pub fn derive_mnemonic() -> Result<String> {
 	let mnemonic: GeneratedKey<_, miniscript::Segwitv0> =
 		Mnemonic::generate((WordCount::Words12, Language::English)).unwrap();
-	// Convert mnemonic to string
 	let mnemonic_words = mnemonic.to_string();
-	// Parse a mnemonic
+	Ok(mnemonic_words)
+}
+
+pub fn setup_wallet(mnemonic: Option<String>) -> Result<Wallet<SqliteDatabase>, anyhow::Error> {
+	let network = Network::Regtest; // Or this can be Network::Bitcoin, Network::Signet or Network::Regtest
+	let mnemonic_words = match mnemonic {
+		Some(mnemonic) => mnemonic,
+		None => derive_mnemonic()?,
+	};
 	let mnemonic = Mnemonic::parse(mnemonic_words).unwrap();
 	// Generate the extended key
 	let xkey: ExtendedKey = mnemonic.into_extended_key().unwrap();
 	// Get xprv from the extended key
 	let xprv = xkey.into_xprv(network).unwrap();
-
 	let db_path: &Path = Path::new("wallet.db");
 
 	let wallet = match Wallet::new(
@@ -40,11 +45,11 @@ pub fn create_wallet() -> Result<(), anyhow::Error> {
 			return Err(anyhow::Error::msg("Failed to set up wallet"));
 		}
 	};
+	Ok(wallet)
+}
 
-	let balance = wallet.get_balance()?;
-	dbg!(balance);
-	let address = wallet.get_address(AddressIndex::New)?;
-	dbg!(address);
-
+pub fn sync_wallet(wallet: &Wallet<SqliteDatabase>) -> Result<(), anyhow::Error> {
+	let blockchain = ElectrumBlockchain::from(Client::new("127.0.0.1:60401")?);
+	wallet.sync(&blockchain, SyncOptions::default())?;
 	Ok(())
 }
