@@ -11,7 +11,6 @@ on:
         paths-ignore:
             - "docs/**"
             - "**.md"
-            -
 env:
     CARGO_TERM_COLOR: always
     RUN_TESTS: false
@@ -51,8 +50,8 @@ jobs:
 
     coverage:
         name: Code coverage
-        runs-on: ubuntu-latest
         if: ${{ env.RUN_TESTS }}
+        runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
               uses: actions/checkout@v3
