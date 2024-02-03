@@ -1,3 +1,4 @@
+use std::env;
 use anyhow::Result;
 use bdk::blockchain::ElectrumBlockchain;
 use bdk::database::SqliteDatabase;
@@ -10,6 +11,7 @@ use bdk::template::Bip84;
 use bdk::{bitcoin::Network, SyncOptions, Wallet};
 use bdk::{miniscript, KeychainKind};
 use std::path::Path;
+use dotenv::dotenv;
 
 /// Generates a 12 word mnemonic
 pub fn derive_mnemonic() -> Result<String> {
@@ -20,7 +22,8 @@ pub fn derive_mnemonic() -> Result<String> {
 }
 
 pub fn setup_wallet(mnemonic: Option<String>) -> Result<Wallet<SqliteDatabase>, anyhow::Error> {
-	let network = Network::Regtest; // Or this can be Network::Bitcoin, Network::Signet or Network::Regtest
+	dotenv().ok();
+	let network = env::var("NETWORK").unwrap();
 	let mnemonic_words = match mnemonic {
 		Some(mnemonic) => mnemonic,
 		None => derive_mnemonic()?,
@@ -29,13 +32,13 @@ pub fn setup_wallet(mnemonic: Option<String>) -> Result<Wallet<SqliteDatabase>, 
 	// Generate the extended key
 	let xkey: ExtendedKey = mnemonic.into_extended_key().unwrap();
 	// Get xprv from the extended key
-	let xprv = xkey.into_xprv(network).unwrap();
+	let xprv = xkey.into_xprv(network.parse()?).unwrap();
 	let db_path: &Path = Path::new("wallet.db");
 
 	let wallet = match Wallet::new(
 		Bip84(xprv, KeychainKind::External),
 		Some(Bip84(xprv, KeychainKind::Internal)),
-		network,
+		network.parse()?,
 		SqliteDatabase::new(db_path),
 	) {
 		Ok(wallet) => wallet,
