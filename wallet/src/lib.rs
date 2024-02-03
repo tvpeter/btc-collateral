@@ -1,4 +1,3 @@
-use std::env;
 use anyhow::Result;
 use bdk::blockchain::ElectrumBlockchain;
 use bdk::database::SqliteDatabase;
@@ -8,10 +7,11 @@ use bdk::keys::{
 	DerivableKey, ExtendedKey, GeneratableKey, GeneratedKey,
 };
 use bdk::template::Bip84;
-use bdk::{bitcoin::Network, SyncOptions, Wallet};
 use bdk::{miniscript, KeychainKind};
-use std::path::Path;
+use bdk::{SyncOptions, Wallet};
 use dotenv::dotenv;
+use std::env;
+use std::path::Path;
 
 /// Generates a 12 word mnemonic
 pub fn derive_mnemonic() -> Result<String> {

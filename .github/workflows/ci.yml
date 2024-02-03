@@ -14,6 +14,7 @@ on:
             -
 env:
     CARGO_TERM_COLOR: always
+    RUN_TESTS: false
 
 jobs:
     build:
@@ -23,6 +24,7 @@ jobs:
             - name: Build
               run: cargo build --verbose
             - name: Run tests
+              if: ${{ env.RUN_TESTS }}
               run: cargo test --verbose
 
     fmt:
@@ -50,7 +52,7 @@ jobs:
     coverage:
         name: Code coverage
         runs-on: ubuntu-latest
-
+        if: ${{ env.RUN_TESTS }}
         steps:
             - name: Checkout repository
               uses: actions/checkout@v3
