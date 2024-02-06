@@ -48,6 +48,7 @@ round = { workspace = true }
 reqwest = { workspace = true }
 anyhow = { workspace = true }
 bdk = { workspace = true }
+base64 ="0.21.7"
 
 wallet = { path = "./wallet" }
 serde_json = "1.0.108"

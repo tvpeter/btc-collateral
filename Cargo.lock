@@ -502,6 +502,7 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "anyhow",
+ "base64 0.21.7",
  "bdk",
  "bitcoin 0.31.1",
  "bitcoincore-rpc",

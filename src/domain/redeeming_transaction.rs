@@ -1,6 +1,8 @@
+use crate::utils::bitcoind_rpc::get_transaction_output;
 use crate::utils::transaction_utils::{get_outpoints_total, Txn};
 use bitcoin::absolute::LockTime;
 use bitcoin::blockdata::transaction::OutPoint;
+use bitcoin::psbt::{Input, Output};
 use bitcoin::transaction::Version;
 use bitcoin::{Psbt, Transaction, TxOut};
 use std::collections::BTreeMap;
@@ -45,7 +47,7 @@ impl RedeemingTxnPSBT {
 			Err(error) => return Err(format!("{:?}", error)),
 		};
 
-		let tx_inputs = RedeemingTxnPSBT::calculate_inputs(&self.inputs)?;
+		let tx_inputs = RedeemingTxnPSBT::calculate_inputs(&self.inputs);
 
 		let initial_output = self.calculate_outputs(input_total, 0.0)?;
 		let fees = RedeemingTxnPSBT::calculate_fees(initial_output, tx_inputs.clone())?;
@@ -61,6 +63,45 @@ impl RedeemingTxnPSBT {
 			input: tx_inputs,
 			output: tx_outputs,
 		})
+	}
+
+	fn create_psbt_inputs(&self) -> Result<Vec<Input>, String> {
+		let mut inputs = Vec::new();
+
+		for input in &self.inputs {
+			let (segwit_tx_status, tx_outpout, txn) =
+				get_transaction_output(input.txid, input.vout)
+					.expect("Error getting transaction details");
+			if segwit_tx_status {
+				inputs.push(Input {
+					witness_utxo: Some(tx_outpout.unwrap()),
+					..Default::default()
+				});
+			} else {
+				inputs.push(Input {
+					non_witness_utxo: Some(txn),
+					..Default::default()
+				});
+			}
+		}
+
+		Ok(inputs)
+	}
+
+	fn create_psbt_outputs(&self) -> Result<Vec<Output>, String> {
+		let (receiving_spkh, change_spkh) =
+			RedeemingTxnPSBT::derive_script_pubkeys(&self.receiving_address, &self.change_address)?;
+
+		Ok(vec![
+			Output {
+				redeem_script: Some(receiving_spkh),
+				..Default::default()
+			},
+			Output {
+				redeem_script: Some(change_spkh),
+				..Default::default()
+			},
+		])
 	}
 
 	fn calculate_outputs(&self, input_total: f64, fees: f64) -> Result<Vec<TxOut>, String> {
@@ -86,6 +127,8 @@ impl RedeemingTxnPSBT {
 
 	pub fn create_psbt(&self) -> Result<Psbt, String> {
 		let unsigned_txn = self.construct_trxn()?;
+		let inputs = self.create_psbt_inputs()?;
+		let outputs = self.create_psbt_outputs()?;
 
 		Ok(Psbt {
 			unsigned_tx: unsigned_txn,
@@ -93,8 +136,8 @@ impl RedeemingTxnPSBT {
 			version: 0,
 			proprietary: BTreeMap::new(),
 			unknown: BTreeMap::new(),
-			inputs: vec![],
-			outputs: vec![],
+			inputs,
+			outputs,
 		})
 	}
 }
@@ -103,10 +146,10 @@ impl Txn for RedeemingTxnPSBT {}
 
 #[cfg(test)]
 mod tests {
-	use std::str::FromStr;
-
 	use super::RedeemingTxnPSBT;
+	use crate::utils::transaction_utils::convert_txn_hex_to_base64;
 	use bitcoin::{blockdata::transaction::OutPoint, Txid};
+	use std::str::FromStr;
 
 	fn redeem_txn() -> RedeemingTxnPSBT {
 		let tx_input = vec![OutPoint::new(
@@ -134,6 +177,8 @@ mod tests {
 			Err(error) => panic!("Error: {:?}", error),
 		};
 
-		println!("psbt: {:?}", psbt.serialize_hex());
+		let b64 = convert_txn_hex_to_base64(psbt.serialize_hex()).unwrap();
+
+		println!("psbt: {:?}", b64);
 	}
 }
