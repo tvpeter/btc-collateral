@@ -1,16 +1,16 @@
+use super::{
+	bitcoind_rpc::get_outpoint_value, get_feerate::get_mempool_feerate,
+	validate_address::validate_address,
+};
+use crate::{constants::set_network, domain::funding_transaction::PRECISION};
+use base64::{engine::general_purpose, Engine as _};
 use bitcoin::{
 	absolute::LockTime, transaction::Version, Amount, OutPoint, ScriptBuf, Sequence, Transaction,
 	TxIn, TxOut, Witness,
 };
 use round::round_down;
 
-use super::{
-	bitcoind_rpc::get_outpoint_value, get_feerate::get_mempool_feerate,
-	validate_address::validate_address,
-};
-use crate::{constants::set_network, domain::funding_transaction::PRECISION};
-
-pub fn get_outpoints_total(inputs: &Vec<OutPoint>) -> Result<f64, String> {
+pub fn get_outpoints_total(inputs: &[OutPoint]) -> Result<f64, String> {
 	let mut inputs_total: f64 = 0.0;
 
 	for input in inputs {
@@ -26,25 +26,27 @@ pub fn get_outpoints_total(inputs: &Vec<OutPoint>) -> Result<f64, String> {
 	Ok(inputs_total)
 }
 
-pub trait Txn {
-	fn calculate_inputs(inputs: &Vec<OutPoint>) -> Result<Vec<TxIn>, String> {
-		let mut tx_inputs = Vec::new();
-		for tx_input in inputs {
-			let outpoint = OutPoint {
-				txid: tx_input.txid,
-				vout: tx_input.vout,
-			};
+/// transaction hex (txn_hex) should be in hex format
+pub fn convert_txn_hex_to_base64(txn_hex: String) -> Result<String, String> {
+	let txn_hex_bytes = hex::decode(txn_hex).expect("Failed to decode given transaction hex");
 
-			let input_detail = TxIn {
-				previous_output: outpoint,
+	Ok(general_purpose::STANDARD.encode(txn_hex_bytes))
+}
+
+pub trait Txn {
+	fn calculate_inputs(inputs: &[OutPoint]) -> Vec<TxIn> {
+		inputs
+			.iter()
+			.map(|input| TxIn {
+				previous_output: OutPoint {
+					txid: input.txid,
+					vout: input.vout,
+				},
 				script_sig: ScriptBuf::new(),
 				sequence: Sequence::ENABLE_RBF_NO_LOCKTIME,
 				witness: Witness::new(),
-			};
-
-			tx_inputs.push(input_detail);
-		}
-		Ok(tx_inputs)
+			})
+			.collect::<Vec<TxIn>>()
 	}
 
 	fn calculate_fees(tx_outputs: Vec<TxOut>, tx_inputs: Vec<TxIn>) -> Result<f64, String> {
@@ -105,6 +107,15 @@ pub trait Txn {
 #[cfg(test)]
 mod tests {
 
+	use super::*;
+
 	#[test]
-	fn test_get_outpoints_total() {}
+	fn test_convert_txn_hex_to_base64() {
+		let txn_hex = "70736274ff010071".to_string();
+		let result = "cHNidP8BAHE=".to_string();
+		let base64 = convert_txn_hex_to_base64(txn_hex).unwrap();
+		println!("result length: {:?}", result.chars().count());
+		println!("base64 length: {:?}", base64.chars().count());
+		assert_eq!(base64, result);
+	}
 }
