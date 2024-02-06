@@ -1,5 +1,5 @@
 use crate::constants::environment_vars;
-use bitcoin::{Transaction, TxOut, Txid, Witness};
+use bitcoin::{Transaction, TxOut, Txid};
 use bitcoincore_rpc::{Auth, Client, Error, RpcApi};
 
 pub fn connect_bitcoind() -> Client {
