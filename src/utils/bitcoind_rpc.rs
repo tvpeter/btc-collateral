@@ -1,6 +1,6 @@
 use crate::constants::environment_vars;
-use bitcoin::Txid;
-use bitcoincore_rpc::{Auth, Client, RpcApi};
+use bitcoin::{Transaction, TxOut, Txid, Witness};
+use bitcoincore_rpc::{Auth, Client, Error, RpcApi};
 
 pub fn connect_bitcoind() -> Client {
 	let env_vars = environment_vars();
@@ -35,6 +35,19 @@ pub fn get_outpoint_value(txid: Txid, vout: u32) -> Result<f64, String> {
 	Ok(result.value.to_btc())
 }
 
+pub fn get_transaction_output(
+	txid: Txid,
+	vout: u32,
+) -> Result<(bool, Option<TxOut>, Transaction), Error> {
+	let client = connect_bitcoind();
+
+	let txn = client.get_raw_transaction(&txid, None)?;
+
+	let is_segwit_txn = !txn.input.iter().all(|input| input.witness.is_empty());
+
+	let index = vout as usize;
+	Ok((is_segwit_txn, txn.output.get(index).cloned(), txn))
+}
 #[cfg(test)]
 mod test {
 	use std::str::FromStr;
@@ -51,5 +64,16 @@ mod test {
 
 		assert_eq!(get_outpoint_value(txid, valid_vout), Ok(1.56250000));
 		assert!(get_outpoint_value(txid, invalid_vout).is_err());
+	}
+
+	#[test]
+	fn test_get_transaction_output() {
+		let txid =
+			Txid::from_str("c770d364d87768dcf0778bf48f095c753e838329d6cc7a3b4fc759317d4efd08")
+				.unwrap();
+		let index = 0;
+		let rawhex = get_transaction_output(txid, index).unwrap();
+
+		println!("raw hex: {:?}", rawhex);
 	}
 }
