@@ -1,7 +1,8 @@
 use crate::constants::set_network;
 use crate::utils::validate_publickeys::is_valid_pubkey;
-use bitcoin::address::Error;
-use bitcoin::{Address, PublicKey, Script};
+use bitcoin::opcodes::all::{OP_CHECKMULTISIG, OP_PUSHNUM_2, OP_PUSHNUM_3};
+use bitcoin::script::Builder;
+use bitcoin::{Address, PublicKey, ScriptBuf};
 
 #[derive(Debug, Clone)]
 pub struct PartiesPublicKeys {
@@ -37,55 +38,29 @@ impl PartiesPublicKeys {
 		}
 	}
 
-	//OP_2  [pubkey1] [pubkey2] [pubkey3] OP_3 OP_CHECKMULTISIG
-	pub fn redeem_script_hex(&self) -> String {
+	///OP_2  [pubkey1] [pubkey2] [pubkey3] OP_3 OP_CHECKMULTISIG
+	pub fn redeem_script(&self) -> ScriptBuf {
 		self.validate_publickeys();
 
-		let borrower_pubkey_len = format!("{:x}", &self.borrower_pubkey.to_bytes().len());
-		let lender_pubkey_len = format!("{:x}", &self.lender_pubkey.to_bytes().len());
-		let service_pubkey_len = format!("{:x}", &self.service_pubkey.to_bytes().len());
-
-		"52".to_string()
-			+ &borrower_pubkey_len
-			+ &self.borrower_pubkey.to_string()
-			+ &lender_pubkey_len
-			+ &self.lender_pubkey.to_string()
-			+ &service_pubkey_len
-			+ &self.service_pubkey.to_string()
-			+ "53ae"
+		Builder::new()
+			.push_opcode(OP_PUSHNUM_2)
+			.push_key(&self.borrower_pubkey)
+			.push_key(&self.lender_pubkey)
+			.push_key(&self.service_pubkey)
+			.push_opcode(OP_PUSHNUM_3)
+			.push_opcode(OP_CHECKMULTISIG)
+			.into_script()
 	}
 
 	pub fn create_p2sh_address(&self) -> Result<Address, String> {
-		let binding = self.redeem_script_hex();
-		let redeemscript_bytes = binding.as_bytes();
-		let derived_script = Script::from_bytes(redeemscript_bytes);
-		let generated_address = Address::p2sh(derived_script, set_network());
-		generated_address.map_err(|err| format!("Error creating p2sh address: {:?}", err))
+		let redeem_script = self.redeem_script();
+		let p2sh_address = Address::p2sh(&redeem_script, set_network());
+		p2sh_address.map_err(|err| format!("Error creating p2sh address: {:?}", err))
 	}
 
 	pub fn create_p2wsh_address(&self) -> Address {
-		let binding = self.redeem_script_hex();
-		let redeemscript_bytes = binding.as_bytes();
-		let redeem_script = Script::from_bytes(redeemscript_bytes);
-		Address::p2wsh(redeem_script, set_network())
-	}
-
-	pub fn print_addresses(&self) {
-		let p2sh_address = self.create_p2sh_address();
-		let _derived_address = match p2sh_address {
-			Ok(generated_address) => {
-				if generated_address.is_spend_standard() {
-					println!("P2SH address: {}", generated_address);
-				} else {
-					println!("{} is a non-standard address", generated_address);
-				}
-				Ok(())
-			}
-			Err(_) => Err(Error::UnrecognizedScript),
-		};
-
-		let p2wsh_address = self.create_p2wsh_address();
-		println!("P2WSH address: {:?}", p2wsh_address);
+		let redeem_script = self.redeem_script();
+		Address::p2wsh(&redeem_script, set_network())
 	}
 }
 
@@ -115,9 +90,10 @@ mod tests {
 	}
 
 	#[test]
-	fn test_redeem_script_hex() {
+	fn test_redeem_script() {
 		let combined_keys = valid_publickeys();
-		assert_eq!(combined_keys.redeem_script_hex(), "522102f0eaa04e609b0044ef1fe09a350dc4b744a5a8604a6fa77bc9bf6443ea50739f21037c60db011a840523f216e7198054ef071c5acd3d4b466cf2658b7faf30c11e332102ca49f36d3de1e135e033052611dd0873af55b57f07d5d0d1090ceb267ac34e6b53ae");
+
+		assert_eq!(combined_keys.redeem_script().to_hex_string(), "522102f0eaa04e609b0044ef1fe09a350dc4b744a5a8604a6fa77bc9bf6443ea50739f21037c60db011a840523f216e7198054ef071c5acd3d4b466cf2658b7faf30c11e332102ca49f36d3de1e135e033052611dd0873af55b57f07d5d0d1090ceb267ac34e6b53ae");
 	}
 
 	#[test]
@@ -133,7 +109,6 @@ mod tests {
 		let network = set_network();
 
 		assert!(result.is_ok());
-
 		let generated_address = result.unwrap();
 		assert_eq!(generated_address.network(), &network);
 		assert_eq!(generated_address.address_type(), Some(AddressType::P2sh))
@@ -144,7 +119,6 @@ mod tests {
 		let valid_instance = valid_publickeys();
 		let result = valid_instance.create_p2wsh_address();
 		let network = set_network();
-
 		assert_eq!(result.network(), &network);
 		assert_eq!(result.address_type(), Some(AddressType::P2wsh));
 	}
