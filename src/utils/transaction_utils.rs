@@ -107,6 +107,10 @@ pub trait Txn {
 #[cfg(test)]
 mod tests {
 
+	use std::str::FromStr;
+
+	use bitcoin::Txid;
+
 	use super::*;
 
 	#[test]
@@ -117,5 +121,38 @@ mod tests {
 		println!("result length: {:?}", result.chars().count());
 		println!("base64 length: {:?}", base64.chars().count());
 		assert_eq!(base64, result);
+	}
+
+	#[test]
+	fn test_get_outpoints_total() {
+		let outpoints = [
+			OutPoint {
+				txid: Txid::from_str(
+					"0de1989117a98627fb8d350d4e568c8ff7ee7e627463a7631ff754680424290b",
+				)
+				.unwrap(),
+				vout: 0,
+			},
+			//  1.56250000
+			OutPoint {
+				txid: Txid::from_str(
+					"f965f67e86b658aae279ac01714a0aa8a78501d8d2b0463b8f298addd47ff0ba",
+				)
+				.unwrap(),
+				vout: 0,
+			},
+			//  1.56250000
+			OutPoint {
+				txid: Txid::from_str(
+					"c770d364d87768dcf0778bf48f095c753e838329d6cc7a3b4fc759317d4efd08",
+				)
+				.unwrap(),
+				vout: 0,
+			},
+		];
+		// total = 4.6875
+
+		let outpoints_total = get_outpoints_total(&outpoints);
+		assert_eq!(outpoints_total, Ok(4.6875));
 	}
 }
