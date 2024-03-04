@@ -108,10 +108,29 @@ pub trait Txn {
 mod tests {
 
 	use std::str::FromStr;
-
 	use bitcoin::Txid;
-
+	use crate::domain::{self};
 	use super::*;
+
+	fn tx_outpoints()-> Vec<OutPoint>{
+		let mut txinputs = Vec::new();
+
+		let outpoint1 = OutPoint::new(
+			Txid::from_str("c770d364d87768dcf0778bf48f095c753e838329d6cc7a3b4fc759317d4efd08")
+				.unwrap(),
+			0,
+		);
+		txinputs.push(outpoint1);
+
+		let outpoint2 = OutPoint::new(
+			Txid::from_str("641641b49c028c02d150619214d27d384235d69864268b128f7b4cc802eed172")
+				.unwrap(),
+			0,
+		);
+		txinputs.push(outpoint2);
+
+		txinputs
+	}
 
 	#[test]
 	fn test_convert_txn_hex_to_base64() {
@@ -155,4 +174,21 @@ mod tests {
 		let outpoints_total = get_outpoints_total(&outpoints);
 		assert_eq!(outpoints_total, Ok(4.6875));
 	}
+
+	#[test]
+	fn test_calculate_inputs(){
+		let txinputs = tx_outpoints();
+
+		let inputs = domain::funding_transaction::FundingTxn::calculate_inputs(&txinputs);
+
+		assert_eq!(inputs.len(), 2);
+		assert_eq!(inputs.first(), Some(TxIn {
+			previous_output: OutPoint {
+				txid: txinputs[0].txid,
+				vout: txinputs[0].vout,
+			},
+			script_sig: ScriptBuf::new(),
+			sequence: Sequence::ENABLE_RBF_NO_LOCKTIME,
+			witness: Witness::new()}).as_ref())
+	}	
 }
