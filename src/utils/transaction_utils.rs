@@ -107,12 +107,12 @@ pub trait Txn {
 #[cfg(test)]
 mod tests {
 
-	use std::str::FromStr;
-	use bitcoin::Txid;
-	use crate::domain::{self};
 	use super::*;
+	use crate::domain::{self};
+	use bitcoin::Txid;
+	use std::str::FromStr;
 
-	fn tx_outpoints()-> Vec<OutPoint>{
+	fn tx_outpoints() -> Vec<OutPoint> {
 		let mut txinputs = Vec::new();
 
 		let outpoint1 = OutPoint::new(
@@ -176,19 +176,45 @@ mod tests {
 	}
 
 	#[test]
-	fn test_calculate_inputs(){
+	fn test_calculate_inputs() {
 		let txinputs = tx_outpoints();
 
 		let inputs = domain::funding_transaction::FundingTxn::calculate_inputs(&txinputs);
 
 		assert_eq!(inputs.len(), 2);
-		assert_eq!(inputs.first(), Some(TxIn {
-			previous_output: OutPoint {
-				txid: txinputs[0].txid,
-				vout: txinputs[0].vout,
-			},
-			script_sig: ScriptBuf::new(),
-			sequence: Sequence::ENABLE_RBF_NO_LOCKTIME,
-			witness: Witness::new()}).as_ref())
-	}	
+		assert_eq!(
+			inputs.first(),
+			Some(TxIn {
+				previous_output: OutPoint {
+					txid: txinputs[0].txid,
+					vout: txinputs[0].vout,
+				},
+				script_sig: ScriptBuf::new(),
+				sequence: Sequence::ENABLE_RBF_NO_LOCKTIME,
+				witness: Witness::new()
+			})
+			.as_ref()
+		)
+	}
+
+	#[test]
+	fn test_derive_script_pubkeys() {
+		let receiving_address =
+			"bcrt1qt8aseu8nm4zah5sdj44gedqmuty3t32k59959vu7k6t72dy8n82qqhrec3".to_owned();
+		let change_address = "bcrt1qq935ysfqnlj9k4jd88hjj093xu00s9ge0a7l5m".to_owned();
+
+		let derived_spks = domain::funding_transaction::FundingTxn::derive_script_pubkeys(
+			&receiving_address,
+			&change_address,
+		);
+		let (receiving_spk, change_spk) = derived_spks.unwrap();
+		assert_eq!(
+			receiving_spk.to_hex_string(),
+			"002059fb0cf0f3dd45dbd20d956a8cb41be2c915c556a14b42b39eb697e5348799d4"
+		);
+		assert_eq!(
+			change_spk.to_hex_string(),
+			"001401634241209fe45b564d39ef293cb1371ef81519"
+		);
+	}
 }
