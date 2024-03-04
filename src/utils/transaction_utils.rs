@@ -217,4 +217,18 @@ mod tests {
 			"001401634241209fe45b564d39ef293cb1371ef81519"
 		);
 	}
+
+	#[test]
+	fn test_amount_hex() {
+		let input_total = 4.6875;
+		let fees = 0.0000453;
+		let tx_amount = 2.56;
+
+		let (derived_amount, change_amount) =
+			domain::funding_transaction::FundingTxn::amount_in_hex(tx_amount, fees, input_total)
+				.unwrap();
+
+		assert_eq!(derived_amount.to_btc(), 2.56000000);
+		assert_eq!(change_amount.to_btc(), 2.12745470);
+	}
 }
