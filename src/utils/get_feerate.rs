@@ -44,7 +44,6 @@ mod tests {
 			Err(error) => panic!("{:?}", error),
 		};
 
-		println!("rates: {:?}", fees);
 		assert_ne!(fees.fastest_fee, fees.economy_fee);
 		assert!(fees.fastest_fee > fees.half_hour_fee);
 	}

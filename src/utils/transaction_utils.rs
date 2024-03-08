@@ -1,5 +1,5 @@
 use super::{
-	bitcoind_rpc::get_outpoint_value, get_feerate::get_mempool_feerate,
+	bitcoind_rpc::get_outpoint_value, get_feerate::MempoolSpaceFeeRate,
 	validate_address::validate_address,
 };
 use crate::{constants::set_network, domain::funding_transaction::PRECISION};
@@ -49,7 +49,11 @@ pub trait Txn {
 			.collect::<Vec<TxIn>>()
 	}
 
-	fn calculate_fees(tx_outputs: Vec<TxOut>, tx_inputs: Vec<TxIn>) -> Result<f64, String> {
+	fn calculate_fees(
+		tx_outputs: Vec<TxOut>,
+		tx_inputs: Vec<TxIn>,
+		fees: &MempoolSpaceFeeRate,
+	) -> Result<f64, String> {
 		let initial_transaction = Transaction {
 			version: Version::TWO,
 			lock_time: LockTime::ZERO,
@@ -62,13 +66,7 @@ pub trait Txn {
 
 		// worse-case size for a signature is 72-bytes
 		let final_size = txn_initial_size + (input_length * 72);
-		let fees = get_mempool_feerate();
-		let fee_rate = match fees {
-			Ok(fees) => fees,
-			Err(error) => return Err(format!("{:?}", error)),
-		};
-
-		let total_fees = fee_rate.fastest_fee * final_size;
+		let total_fees = fees.fastest_fee * final_size;
 		let fee_rate = Amount::from_sat(total_fees.try_into().unwrap());
 
 		Ok(fee_rate.to_btc())

@@ -1,3 +1,4 @@
+use crate::utils::get_feerate::get_mempool_feerate;
 use crate::utils::transaction_utils::{get_outpoints_total, Txn};
 use bitcoin::absolute::LockTime;
 use bitcoin::blockdata::transaction::{OutPoint, Transaction, TxOut};
@@ -43,11 +44,11 @@ impl FundingTxn {
 			}
 			Err(error) => return Err(format!("{:?}", error)),
 		};
-
+		let fee_rates = get_mempool_feerate().unwrap();
 		let tx_inputs = FundingTxn::calculate_inputs(&self.inputs);
 
 		let initial_output = self.calculate_outputs(input_total, 0.0)?;
-		let fees = FundingTxn::calculate_fees(initial_output, tx_inputs.clone())?;
+		let fees = FundingTxn::calculate_fees(initial_output, tx_inputs.clone(), &fee_rates)?;
 
 		let tx_outputs = match self.calculate_outputs(input_total, fees) {
 			Ok(value) => value,
@@ -94,7 +95,7 @@ mod test {
 	use bitcoincore_rpc::RawTx;
 	use round::round_down;
 
-	use crate::{domain::funding_transaction::FundingTxn, utils::get_feerate::get_mempool_feerate};
+	use crate::{domain::funding_transaction::FundingTxn, utils::get_feerate::MempoolSpaceFeeRate};
 
 	use super::*;
 
@@ -144,10 +145,17 @@ mod test {
 
 		let inputs = FundingTxn::calculate_inputs(&txn.inputs);
 		let tx_outputs = txn.calculate_outputs(input_total, 0.0).unwrap();
-		let computed_fees = FundingTxn::calculate_fees(tx_outputs, inputs).unwrap();
+		let fee_rate = MempoolSpaceFeeRate {
+			fastest_fee: 15,
+			half_hour_fee: 14,
+			hour_fee: 13,
+			economy_fee: 12,
+			minimum_fee: 10,
+		};
+		let computed_fees = FundingTxn::calculate_fees(tx_outputs, inputs, &fee_rate).unwrap();
 
 		let v_size = txn_details.vsize();
-		let fee_rate = get_mempool_feerate().unwrap();
+
 		let input_len = txn_details.input.len();
 
 		let total_size = v_size + (input_len * 72);
