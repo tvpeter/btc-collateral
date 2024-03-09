@@ -3,15 +3,17 @@ use actix_web::{dev::Server, web, App, HttpServer};
 use bdk::bitcoin::Network;
 use bdk::database::SqliteDatabase;
 use bdk::{testutils, Wallet};
+use sqlx::PgConnection;
 use std::net::TcpListener;
 use std::sync::{Arc, Mutex};
 
 pub struct AppState {
+	pub db: PgConnection,
 	pub passkey: Mutex<String>,
 	pub wallet: Arc<Mutex<Wallet<SqliteDatabase>>>,
 }
 
-pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
+pub fn run(listener: TcpListener, connection: PgConnection) -> Result<Server, std::io::Error> {
 	// for initializing the wallet state
 	let descriptors = testutils!(@descriptors (&"wpkh([c258d2e4/84h/1h/0h]tpubDDYkZojQFQjht8Tm4jsS3iuEmKjTiEGjG6KnuFNKKJb5A6ZUCUZKdvLdSDWofKi4ToRCwb9poe1XdqfUnP4jaJjCB2Zwv11ZLgSbnZSNecE/0/*)"));
 
@@ -26,6 +28,7 @@ pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
 			)
 			.unwrap(),
 		)),
+		db: connection,
 	});
 
 	let server = HttpServer::new(move || {

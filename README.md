@@ -40,6 +40,22 @@ The lending terms between the borrower and the lender are tendered to the servic
     $ cargo run
     ```
 
+## DB setup
+- Make the `init_db.sh` file executable
+```sh
+$ chmod +x scripts/init_db.sh
+```
+- Run the `init_db.sh` file
+```sh
+$ ./scripts/init_db.sh
+```
+- Install `sqlx-cli` to manage db migrations
+```sh
+$ cargo install sqlx-cli --no-default-features --features postgres
+```
+Read more here [sqlx-cli](https://crates.io/crates/sqlx-cli)
+ 
+
 ## Third-party Services
 
 1. Mempool.space API for Fees Rates
