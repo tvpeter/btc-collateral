@@ -1,4 +1,5 @@
 use crate::utils::bitcoind_rpc::get_transaction_output;
+use crate::utils::get_feerate::get_mempool_feerate;
 use crate::utils::transaction_utils::{get_outpoints_total, Txn};
 use bitcoin::absolute::LockTime;
 use bitcoin::blockdata::transaction::OutPoint;
@@ -50,7 +51,8 @@ impl RedeemingTxnPSBT {
 		let tx_inputs = RedeemingTxnPSBT::calculate_inputs(&self.inputs);
 
 		let initial_output = self.calculate_outputs(input_total, 0.0)?;
-		let fees = RedeemingTxnPSBT::calculate_fees(initial_output, tx_inputs.clone())?;
+		let fee_rates = get_mempool_feerate().unwrap();
+		let fees = RedeemingTxnPSBT::calculate_fees(initial_output, tx_inputs.clone(), &fee_rates)?;
 
 		let tx_outputs = match self.calculate_outputs(input_total, fees) {
 			Ok(value) => value,
