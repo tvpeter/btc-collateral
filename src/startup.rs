@@ -1,19 +1,19 @@
-use crate::service::{health_check, wallet_service};
+use crate::service::{create_user, health_check, wallet_service};
 use actix_web::{dev::Server, web, App, HttpServer};
 use bdk::bitcoin::Network;
 use bdk::database::SqliteDatabase;
 use bdk::{testutils, Wallet};
-use sqlx::PgConnection;
+use sqlx::PgPool;
 use std::net::TcpListener;
 use std::sync::{Arc, Mutex};
 
 pub struct AppState {
-	pub db: PgConnection,
+	pub db: PgPool,
 	pub passkey: Mutex<String>,
 	pub wallet: Arc<Mutex<Wallet<SqliteDatabase>>>,
 }
 
-pub fn run(listener: TcpListener, connection: PgConnection) -> Result<Server, std::io::Error> {
+pub fn run(listener: TcpListener, db_pool: PgPool) -> Result<Server, std::io::Error> {
 	// for initializing the wallet state
 	let descriptors = testutils!(@descriptors (&"wpkh([c258d2e4/84h/1h/0h]tpubDDYkZojQFQjht8Tm4jsS3iuEmKjTiEGjG6KnuFNKKJb5A6ZUCUZKdvLdSDWofKi4ToRCwb9poe1XdqfUnP4jaJjCB2Zwv11ZLgSbnZSNecE/0/*)"));
 
@@ -28,7 +28,7 @@ pub fn run(listener: TcpListener, connection: PgConnection) -> Result<Server, st
 			)
 			.unwrap(),
 		)),
-		db: connection,
+		db: db_pool.clone(),
 	});
 
 	let server = HttpServer::new(move || {
@@ -45,6 +45,7 @@ pub fn run(listener: TcpListener, connection: PgConnection) -> Result<Server, st
 			)
 			.route("/get_address", web::get().to(wallet_service::get_address))
 			.route("/get_balance", web::get().to(wallet_service::get_balance))
+			.route("/create_user", web::post().to(create_user))
 	})
 	.listen(listener)?
 	.run();
