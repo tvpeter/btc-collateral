@@ -1,3 +1,4 @@
+pub mod api_result;
 pub mod bitcoind_rpc;
 pub mod get_feerate;
 pub mod transaction_utils;

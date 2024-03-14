@@ -4,3 +4,4 @@ pub mod domain;
 pub mod service;
 pub mod startup;
 pub mod utils;
+mod common;
