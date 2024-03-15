@@ -1,4 +1,6 @@
-use crate::{startup::AppState, utils::api_result::ApiResult};
+use crate::{
+	common::meta::user::UpdatePasswordRequest, startup::AppState, utils::api_result::ApiResult,
+};
 use actix_web::{web, HttpResponse};
 use reqwest::StatusCode;
 // use sql_query_builder as sql;
@@ -106,22 +108,106 @@ pub async fn list_users(data: web::Data<AppState>) -> HttpResponse {
 }
 
 pub async fn get_user_by_id(id: web::Path<Uuid>, data: web::Data<AppState>) -> HttpResponse {
-	match sqlx::query_as!(
-		User,
+	let user_id = fetch_user_id(id.into_inner(), data);
+
+	match user_id.await {
+		Ok(user_id) => HttpResponse::Ok().json(ApiResult::success(Some(user_id))),
+		Err(e) => {
+			println!("Failed to fetch user {}", e);
+			HttpResponse::InternalServerError().finish()
+		}
+	}
+}
+/*
+pub async fn update_user(id: web::Path<Uuid>, data: web::Data<AppState>) -> HttpResponse {
+	match sqlx::query!(
 		r#"
-		SELECT id, username, email, phone, created_at
-		FROM "user"
+		UPDATE "user"
+		SET updated_at = $1
+		WHERE id = $2;
+		"#,
+		Utc::now(),
+		id.into_inner()
+	)
+	.execute(&data.db)
+	.await
+	{
+		Ok(_) => HttpResponse::Ok().finish(),
+		Err(e) => {
+			println!("Failed to update user {}", e);
+			HttpResponse::InternalServerError().finish()
+		}
+	}
+}
+*/
+pub async fn update_password(
+	form: web::Form<UpdatePasswordRequest>,
+	data: web::Data<AppState>,
+) -> HttpResponse {
+	match form.validate() {
+		Ok(_) => (),
+		Err(e) => {
+			println!("Failed to validate form {}", e);
+			return HttpResponse::BadRequest().json(ApiResult::<()>::error(
+				StatusCode::BAD_REQUEST.as_u16().to_string(),
+				Some(e.to_string()),
+			));
+		}
+	}
+
+	match fetch_user_id(form.id, data.clone()).await {
+		Ok(user) => {
+			if user.id != form.id {
+				return HttpResponse::BadRequest().json(ApiResult::<()>::error(
+					StatusCode::BAD_REQUEST.as_u16().to_string(),
+					Some("Invalid user".to_string()),
+				));
+			}
+		}
+		Err(e) => {
+			println!("Failed to fetch user {}", e);
+			return HttpResponse::BadRequest().json(ApiResult::<()>::error(
+				StatusCode::BAD_REQUEST.as_u16().to_string(),
+				Some("Invalid user".to_string()),
+			));
+		}
+	}
+
+	match sqlx::query!(
+		r#"
+		UPDATE "user"
+		SET password_hash = $1, updated_at = $2
+		WHERE id = $3;
+		"#,
+		form.new_password,
+		Utc::now(),
+		form.id
+	)
+	.execute(&data.db)
+	.await
+	{
+		Ok(_) => HttpResponse::Ok().finish(),
+		Err(e) => {
+			println!("Failed to update user {}", e);
+			HttpResponse::InternalServerError().finish()
+		}
+	}
+}
+
+pub async fn delete_user(id: web::Path<Uuid>, data: web::Data<AppState>) -> HttpResponse {
+	match sqlx::query!(
+		r#"
+		DELETE FROM "user"
 		WHERE id = $1;
 		"#,
 		id.into_inner()
 	)
-	.fetch_optional(&data.db)
+	.execute(&data.db)
 	.await
 	{
-		Ok(Some(user)) => HttpResponse::Ok().json(ApiResult::success(Some(user))),
-		Ok(None) => HttpResponse::NotFound().finish(),
+		Ok(_) => HttpResponse::Ok().finish(),
 		Err(e) => {
-			println!("Failed to fetch user {}", e);
+			println!("Failed to delete user {}", e);
 			HttpResponse::InternalServerError().finish()
 		}
 	}
@@ -137,4 +223,19 @@ pub async fn fetch_users(data: web::Data<AppState>) -> Result<Vec<User>, anyhow:
 	.fetch_all(&data.db)
 	.await?;
 	Ok(users)
+}
+
+pub async fn fetch_user_id(id: Uuid, data: web::Data<AppState>) -> Result<User, anyhow::Error> {
+	let row = sqlx::query_as!(
+		User,
+		r#"
+        SELECT id, username, email, phone, created_at
+        FROM "user"
+        WHERE id = $1
+        "#,
+		id,
+	)
+	.fetch_one(&data.db)
+	.await?;
+	Ok(row)
 }

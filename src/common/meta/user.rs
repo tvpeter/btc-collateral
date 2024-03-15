@@ -38,3 +38,18 @@ pub struct User {
 	pub phone: Option<String>,
 	pub created_at: DateTime<Utc>,
 }
+
+#[derive(Debug, Validate, Deserialize, Serialize)]
+pub struct UpdatePasswordRequest {
+	pub id: Uuid,
+	pub current_password: String,
+	#[validate(length(min = 8, max = 32,))]
+	pub new_password: String,
+	#[validate(length(min = 8, max = 32))]
+	#[validate(must_match(
+		code = "confirm_password",
+		message = "Passwords do not match",
+		other = "new_password"
+	))]
+	pub confirm_password: String,
+}

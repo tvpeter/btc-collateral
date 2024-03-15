@@ -1,4 +1,8 @@
-use crate::service::{create_user, get_user_by_id, health_check, list_users, wallet_service};
+use crate::service::{
+	create_user, delete_user, get_user_by_id, health_check, list_users, update_password,
+	wallet_service,
+};
+use actix_web::middleware::Logger;
 use actix_web::{dev::Server, web, App, HttpServer};
 use bdk::bitcoin::Network;
 use bdk::database::SqliteDatabase;
@@ -33,6 +37,7 @@ pub fn run(listener: TcpListener, db_pool: PgPool) -> Result<Server, std::io::Er
 
 	let server = HttpServer::new(move || {
 		App::new()
+			.wrap(Logger::default())
 			.app_data(data.clone())
 			.route("/health_check", web::get().to(health_check))
 			.route(
@@ -48,6 +53,8 @@ pub fn run(listener: TcpListener, db_pool: PgPool) -> Result<Server, std::io::Er
 			.route("/create_user", web::post().to(create_user))
 			.route("/users", web::get().to(list_users))
 			.route("user/{id}", web::get().to(get_user_by_id))
+			.route("user/{id}", web::delete().to(delete_user))
+			.route("change_password", web::put().to(update_password))
 	})
 	.listen(listener)?
 	.run();
