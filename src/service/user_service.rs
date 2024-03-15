@@ -105,6 +105,28 @@ pub async fn list_users(data: web::Data<AppState>) -> HttpResponse {
 	}
 }
 
+pub async fn get_user_by_id(id: web::Path<Uuid>, data: web::Data<AppState>) -> HttpResponse {
+	match sqlx::query_as!(
+		User,
+		r#"
+		SELECT id, username, email, phone, created_at
+		FROM "user"
+		WHERE id = $1;
+		"#,
+		id.into_inner()
+	)
+	.fetch_optional(&data.db)
+	.await
+	{
+		Ok(Some(user)) => HttpResponse::Ok().json(ApiResult::success(Some(user))),
+		Ok(None) => HttpResponse::NotFound().finish(),
+		Err(e) => {
+			println!("Failed to fetch user {}", e);
+			HttpResponse::InternalServerError().finish()
+		}
+	}
+}
+
 pub async fn fetch_users(data: web::Data<AppState>) -> Result<Vec<User>, anyhow::Error> {
 	let users = sqlx::query_as::<_, User>(
 		r#"

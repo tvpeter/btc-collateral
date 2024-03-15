@@ -1,4 +1,4 @@
-use crate::service::{create_user, health_check, list_users, wallet_service};
+use crate::service::{create_user, get_user_by_id, health_check, list_users, wallet_service};
 use actix_web::{dev::Server, web, App, HttpServer};
 use bdk::bitcoin::Network;
 use bdk::database::SqliteDatabase;
@@ -47,6 +47,7 @@ pub fn run(listener: TcpListener, db_pool: PgPool) -> Result<Server, std::io::Er
 			.route("/get_balance", web::get().to(wallet_service::get_balance))
 			.route("/create_user", web::post().to(create_user))
 			.route("/users", web::get().to(list_users))
+			.route("user/{id}", web::get().to(get_user_by_id))
 	})
 	.listen(listener)?
 	.run();

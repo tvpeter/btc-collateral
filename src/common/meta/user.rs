@@ -30,7 +30,7 @@ pub struct CreateUserData {
 	pub password: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+#[derive(Debug, Clone, Serialize, Default, Deserialize, FromRow)]
 pub struct User {
 	pub id: Uuid,
 	pub username: String,
