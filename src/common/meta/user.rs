@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use once_cell::sync::Lazy;
 use regex::Regex;
+use secrecy::Secret;
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use uuid::Uuid;
@@ -8,7 +9,7 @@ use validator::Validate;
 
 static USERNAME_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[0-9A-Za-z_]+$").unwrap());
 
-#[derive(Debug, Validate, Deserialize, Serialize)]
+#[derive(Debug, Validate, Deserialize)]
 pub struct CreateUserData {
 	#[validate(
 		regex(
@@ -26,8 +27,7 @@ pub struct CreateUserData {
 	#[validate(email(code = "email", message = "Email is invalid"))]
 	pub email: String,
 	pub phone: String,
-	#[validate(length(min = 8, max = 32))]
-	pub password: String,
+	pub password: Secret<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Default, Deserialize, FromRow)]
@@ -39,17 +39,10 @@ pub struct User {
 	pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Validate, Deserialize, Serialize)]
+#[derive(Debug, Validate, Deserialize)]
 pub struct UpdatePasswordRequest {
 	pub id: Uuid,
-	pub current_password: String,
-	#[validate(length(min = 8, max = 32,))]
-	pub new_password: String,
-	#[validate(length(min = 8, max = 32))]
-	#[validate(must_match(
-		code = "confirm_password",
-		message = "Passwords do not match",
-		other = "new_password"
-	))]
-	pub confirm_password: String,
+	pub current_password: Secret<String>,
+	pub new_password: Secret<String>,
+	pub confirm_password: Secret<String>,
 }

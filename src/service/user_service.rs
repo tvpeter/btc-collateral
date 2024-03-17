@@ -6,6 +6,7 @@ use reqwest::StatusCode;
 // use sql_query_builder as sql;
 use crate::common::meta::user::{CreateUserData, User};
 use chrono::Utc;
+use secrecy::{ExposeSecret};
 use std::string::String;
 use uuid::Uuid;
 use validator::Validate;
@@ -27,6 +28,8 @@ pub async fn create_user(
 			));
 		}
 	}
+	let password_hash = crate::utils::password::hash_password(form.password.clone()).unwrap();
+
 	match (sqlx::query!(
 		r#"
 		INSERT INTO "user"(id, username, email, phone, password_hash, created_at, updated_at)
@@ -36,7 +39,7 @@ pub async fn create_user(
 		form.username,
 		form.email,
 		form.phone,
-		form.password,
+		password_hash.expose_secret(),
 		Utc::now(),
 		Utc::now()
 	))
@@ -75,7 +78,6 @@ pub async fn create_user(
 					Some(code.to_string()),
 				));
 			}
-			// Err::<(), _>(sqlx::Error::Database(dberr));
 			HttpResponse::InternalServerError().finish()
 		}
 		Err(e) => {
@@ -144,17 +146,6 @@ pub async fn update_password(
 	form: web::Form<UpdatePasswordRequest>,
 	data: web::Data<AppState>,
 ) -> HttpResponse {
-	match form.validate() {
-		Ok(_) => (),
-		Err(e) => {
-			println!("Failed to validate form {}", e);
-			return HttpResponse::BadRequest().json(ApiResult::<()>::error(
-				StatusCode::BAD_REQUEST.as_u16().to_string(),
-				Some(e.to_string()),
-			));
-		}
-	}
-
 	match fetch_user_id(form.id, data.clone()).await {
 		Ok(user) => {
 			if user.id != form.id {
@@ -179,7 +170,7 @@ pub async fn update_password(
 		SET password_hash = $1, updated_at = $2
 		WHERE id = $3;
 		"#,
-		form.new_password,
+		form.new_password.expose_secret(),
 		Utc::now(),
 		form.id
 	)
