@@ -3,7 +3,6 @@ use crate::{
 };
 use actix_web::{web, HttpResponse};
 use reqwest::StatusCode;
-// use sql_query_builder as sql;
 use crate::common::meta::user::{CreateUserData, User};
 use chrono::Utc;
 use secrecy::ExposeSecret;
