@@ -1,10 +1,11 @@
 use crate::{
-	common::meta::user::UpdatePasswordRequest, startup::AppState, utils::api_result::ApiResult,
+	common::meta::user::{CreateUserData, UpdatePasswordRequest, User},
+	startup::AppState,
+	utils::api_result::ApiResult,
 };
 use actix_web::{web, HttpResponse};
-use reqwest::StatusCode;
-use crate::common::meta::user::{CreateUserData, User};
 use chrono::Utc;
+use reqwest::StatusCode;
 use secrecy::ExposeSecret;
 use std::string::String;
 use uuid::Uuid;
