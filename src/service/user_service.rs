@@ -6,7 +6,7 @@ use reqwest::StatusCode;
 // use sql_query_builder as sql;
 use crate::common::meta::user::{CreateUserData, User};
 use chrono::Utc;
-use secrecy::{ExposeSecret};
+use secrecy::ExposeSecret;
 use std::string::String;
 use uuid::Uuid;
 use validator::Validate;
