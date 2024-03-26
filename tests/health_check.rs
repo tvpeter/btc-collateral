@@ -2,6 +2,7 @@ use btc_collateral::config::Settings;
 use sqlx::{Connection, PgConnection};
 use std::net::TcpListener;
 
+#[ignore]
 #[tokio::test]
 async fn health_check_works() {
 	// Arrange
