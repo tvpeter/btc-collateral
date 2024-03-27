@@ -80,7 +80,14 @@ Read more here [sqlx-cli](https://crates.io/crates/sqlx-cli)
     -   To generate an address from a wallet, specify the wallet e.g `bitcoin-cli -rpcwallet={walletname} getnewaddress`
     -   To get a public key, use an already generated address and use the cli command `bitcoin-cli getadressinfo {address}` 
     -   To get unspent transaction outputs (UTXO), use the command `bitcoin-cli listunspent`
-    -   Replace all addresses, public keys and txid's in the appropriate tests 
+    -   Replace all addresses, public keys and txid's in the appropriate tests. Currently the following modules uses pubkeys, addresses and txids: 
+        - utiils/bitcoind_rpc
+        - utils/transaction_utils
+        - utils/validate_address
+        - utils/validate_publickeys
+        - domain/funding_transaction
+        - domain/generate_address
+        - domain/redeeming_transaction
     -   TO get the redeemscript, run the test in the funding transaction, and it will output the redeemscript, then replace the stated redeemscript in the test_redeemscript fn to run your test.
 
 3. Run `cargo test` to run all the tests
