@@ -30,7 +30,7 @@ pub fn get_partial_derivation(
 	}
 	let partial = &sub_derivation[derivation.len()..];
 	dbg!(&partial);
-    Ok(DerivationPath::from(partial))
+	Ok(DerivationPath::from(partial))
 }
 pub fn derive_relative_xpriv(
 	xprv: &Xpriv,

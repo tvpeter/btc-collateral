@@ -1,5 +1,4 @@
 use crate::constants::set_network;
-use crate::utils::validate_publickeys::is_valid_pubkey;
 use bitcoin::opcodes::all::{OP_CHECKMULTISIG, OP_PUSHNUM_2, OP_PUSHNUM_3};
 use bitcoin::script::Builder;
 use bitcoin::{Address, PublicKey, ScriptBuf};
@@ -24,23 +23,24 @@ impl PartiesPublicKeys {
 		}
 	}
 
-	fn validate_publickeys(&self) {
-		if !is_valid_pubkey(&self.borrower_pubkey.to_bytes()) {
-			panic!("Invalid borrower public key");
-		}
+	fn validate_pubkeys(&self) -> Result<Self, String> {
+		let borrower_pubkey = PublicKey::from_slice(&self.borrower_pubkey.to_bytes())
+			.map_err(|e| format!("Invalid borrower pubkey: {:?}", e))?;
+		let lender_pubkey = PublicKey::from_slice(&self.lender_pubkey.to_bytes())
+			.map_err(|e| format!("Invalid lender pubkey: {:?}", e))?;
+		let service_pubkey = PublicKey::from_slice(&self.service_pubkey.to_bytes())
+			.map_err(|e| format!("Invalid service pubkey: {:?}", e))?;
 
-		if !is_valid_pubkey(&self.lender_pubkey.to_bytes()) {
-			panic!("Invalid lender public key");
-		}
-
-		if !is_valid_pubkey(&self.service_pubkey.to_bytes()) {
-			panic!("Invalid service public key");
-		}
+		Ok(Self {
+			borrower_pubkey,
+			lender_pubkey,
+			service_pubkey,
+		})
 	}
 
 	///OP_2  [pubkey1] [pubkey2] [pubkey3] OP_3 OP_CHECKMULTISIG
 	pub fn redeem_script(&self) -> ScriptBuf {
-		self.validate_publickeys();
+		let _ = self.validate_pubkeys();
 
 		Builder::new()
 			.push_opcode(OP_PUSHNUM_2)
@@ -53,14 +53,12 @@ impl PartiesPublicKeys {
 	}
 
 	pub fn create_p2sh_address(&self) -> Result<Address, String> {
-		let redeem_script = self.redeem_script();
-		let p2sh_address = Address::p2sh(&redeem_script, set_network());
-		p2sh_address.map_err(|err| format!("Error creating p2sh address: {:?}", err))
+		Address::p2sh(&self.redeem_script(), set_network())
+			.map_err(|err| format!("Error creating p2sh address: {:?}", err))
 	}
 
 	pub fn create_p2wsh_address(&self) -> Address {
-		let redeem_script = self.redeem_script();
-		Address::p2wsh(&redeem_script, set_network())
+		Address::p2wsh(&self.redeem_script(), set_network())
 	}
 }
 
@@ -99,7 +97,7 @@ mod tests {
 	#[test]
 	fn test_validate_publickeys() {
 		let valid_instance = valid_publickeys();
-		assert!(std::panic::catch_unwind(|| valid_instance.validate_publickeys()).is_ok());
+		assert!(std::panic::catch_unwind(|| valid_instance.validate_pubkeys()).is_ok());
 	}
 
 	#[test]
