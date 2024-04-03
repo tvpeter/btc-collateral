@@ -35,11 +35,6 @@ impl PartiesPublicKeys {
 			.into_script()
 	}
 
-	pub fn create_p2sh_address(&self) -> Result<Address, String> {
-		Address::p2sh(&self.redeem_script(), set_network())
-			.map_err(|err| format!("Error creating p2sh address: {:?}", err))
-	}
-
 	pub fn create_p2wsh_address(&self) -> Address {
 		Address::p2wsh(&self.redeem_script(), set_network())
 	}
@@ -75,18 +70,6 @@ mod tests {
 		let combined_keys = valid_publickeys();
 
 		assert_eq!(combined_keys.redeem_script().to_hex_string(), "522102f0eaa04e609b0044ef1fe09a350dc4b744a5a8604a6fa77bc9bf6443ea50739f21037c60db011a840523f216e7198054ef071c5acd3d4b466cf2658b7faf30c11e332102ca49f36d3de1e135e033052611dd0873af55b57f07d5d0d1090ceb267ac34e6b53ae");
-	}
-
-	#[test]
-	fn test_create_p2sh_address() {
-		let valid_instance = valid_publickeys();
-		let result = valid_instance.create_p2sh_address();
-		let network = set_network();
-
-		assert!(result.is_ok());
-		let generated_address = result.unwrap();
-		assert_eq!(generated_address.network(), &network);
-		assert_eq!(generated_address.address_type(), Some(AddressType::P2sh))
 	}
 
 	#[test]
