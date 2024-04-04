@@ -54,7 +54,7 @@ pub fn sign_psbt(mut psbt: Psbt, xprv: Xpriv, derivation: &DerivationPath) -> Re
 			.context("Witness utxo not found")?
 			.value;
 		let mut sighash_cache = SighashCache::new(&psbt.unsigned_tx);
-		let sighash = sighash_cache.p2wpkh_signature_hash(
+		let sighash = sighash_cache.p2wsh_signature_hash(
 			index,
 			witness_script,
 			amount,
