@@ -30,13 +30,13 @@ impl FundingTxn {
 	}
 
 	pub fn construct_trxn(&self) -> Result<Transaction, String> {
-		let input_total = get_outpoints_total(&self.inputs)
-			.map_err(|e| format!("failed to get total UTXOs: {:?}", e))?;
+		let input_total = get_outpoints_total(&self.inputs).map_err(|e| format!("{:?}", e))?;
 
 		if input_total < self.amount {
-			return Err(
-				"The given UTXO set do not have enough value for this transaction".to_string(),
-			);
+			return Err(format!(
+				"Insufficient amount of satoshis provided: {}",
+				input_total
+			));
 		}
 
 		let fee_rates = get_mempool_feerate().unwrap();
@@ -45,10 +45,9 @@ impl FundingTxn {
 		let initial_output = self.calculate_outputs(input_total, 0.0)?;
 		let fees = FundingTxn::calculate_fees(initial_output, tx_inputs.clone(), &fee_rates)?;
 
-		let tx_outputs = match self.calculate_outputs(input_total, fees) {
-			Ok(value) => value,
-			Err(error) => return Err(format!("{:?}", error)),
-		};
+		let tx_outputs = self
+			.calculate_outputs(input_total, fees)
+			.map_err(|err| format!("{:?}", err))?;
 
 		Ok(Transaction {
 			version: Version::TWO,

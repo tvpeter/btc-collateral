@@ -15,11 +15,7 @@ pub fn get_outpoints_total(inputs: &[OutPoint]) -> Result<f64, String> {
 
 	for input in inputs {
 		let outpoint_value = get_outpoint_value(input.txid, input.vout);
-		let value = match outpoint_value {
-			Ok(amount) => amount,
-			Err(err) => return Err(format!("{:?}", err)),
-		};
-
+		let value = outpoint_value.map_err(|e| format!("{:?}", e))?;
 		inputs_total += value;
 	}
 
