@@ -39,7 +39,7 @@ impl FundingTxn {
 			));
 		}
 
-		let fee_rates = get_mempool_feerate().unwrap();
+		let fee_rates = get_mempool_feerate().map_err(|e| format!("{:?}", e))?;
 		let tx_inputs = FundingTxn::calculate_inputs(&self.inputs);
 
 		let initial_output = self.calculate_outputs(input_total, 0.0)?;
