@@ -86,31 +86,21 @@ pub fn sign_psbt(mut psbt: Psbt, xprv: Xpriv, derivation: &DerivationPath) -> Re
 
 #[cfg(test)]
 mod tests {
-	use crate::
-		domain::MultisigAddress
-	;
-	use bitcoin::{
-		bip32::Xpriv, secp256k1, AddressType, Network::Regtest, PrivateKey,
-		PublicKey,
-	};
-
+	use crate::domain::MultisigAddress;
+	use bitcoin::{bip32::Xpriv, secp256k1, AddressType, Network::Regtest, PrivateKey, PublicKey};
 
 	fn get_xprivs() -> (Xpriv, Xpriv, Xpriv) {
 		(
-		 Xpriv::new_master(Regtest, Default::default()).unwrap(),
-		 Xpriv::new_master(Regtest, Default::default()).unwrap(),
-		 Xpriv::new_master(Regtest, Default::default()).unwrap(),
+			Xpriv::new_master(Regtest, Default::default()).unwrap(),
+			Xpriv::new_master(Regtest, Default::default()).unwrap(),
+			Xpriv::new_master(Regtest, Default::default()).unwrap(),
 		)
 	}
 
-	fn get_privkeys()-> (PrivateKey, PrivateKey, PrivateKey)  {
+	fn get_privkeys() -> (PrivateKey, PrivateKey, PrivateKey) {
 		let (x_priv_a, x_priv_b, x_priv_c) = get_xprivs();
 
-		(
-			x_priv_a.to_priv(),
-			x_priv_b.to_priv(),
-			x_priv_c.to_priv(),
-		)
+		(x_priv_a.to_priv(), x_priv_b.to_priv(), x_priv_c.to_priv())
 	}
 
 	fn derive_address() -> MultisigAddress {
@@ -139,5 +129,5 @@ mod tests {
 
 		assert_eq!(address.address_type(), Some(AddressType::P2wsh));
 		assert_eq!(address.network(), &Regtest);
-	}	
+	}
 }
