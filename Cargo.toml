@@ -53,4 +53,16 @@ base64 ="0.21.7"
 
 wallet = { path = "./wallet" }
 serde_json = "1.0.108"
-sqlx = { version = "*", features = ["runtime-actix-rustls", "macros", "postgres", "chrono", "uuid", "migrate"] }
+sqlx = { version = "0.6.3", features = ["runtime-actix-rustls", "macros", "postgres", "chrono", "uuid", "migrate"] }
+uuid = { version = "1.7.0", features = ["v4", "fast-rng", "serde"] }
+chrono = { version = "0.4.33", features = ["serde"] }
+serde_urlencoded = "0.7.1"
+validator = { version = "0.16.0", features = ["derive"] }
+regex = "1.10.3"
+once_cell = "1.19.0"
+sql_query_builder = { version = "2.1.0", features = ["postgresql"] }
+lettre = "0.11.4"
+env_logger = "0.11.3"
+secrecy = { version = "0.8", features = ["serde"] }
+argon2 = { version = "0.5.3", features = ["std"] }
+
