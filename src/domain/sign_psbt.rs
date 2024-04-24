@@ -83,3 +83,61 @@ pub fn sign_psbt(mut psbt: Psbt, xprv: Xpriv, derivation: &DerivationPath) -> Re
 	}
 	Ok(psbt)
 }
+
+#[cfg(test)]
+mod tests {
+	use crate::
+		domain::MultisigAddress
+	;
+	use bitcoin::{
+		bip32::Xpriv, secp256k1, AddressType, Network::Regtest, PrivateKey,
+		PublicKey,
+	};
+
+
+	fn get_xprivs() -> (Xpriv, Xpriv, Xpriv) {
+		(
+		 Xpriv::new_master(Regtest, Default::default()).unwrap(),
+		 Xpriv::new_master(Regtest, Default::default()).unwrap(),
+		 Xpriv::new_master(Regtest, Default::default()).unwrap(),
+		)
+	}
+
+	fn get_privkeys()-> (PrivateKey, PrivateKey, PrivateKey)  {
+		let (x_priv_a, x_priv_b, x_priv_c) = get_xprivs();
+
+		(
+			x_priv_a.to_priv(),
+			x_priv_b.to_priv(),
+			x_priv_c.to_priv(),
+		)
+	}
+
+	fn derive_address() -> MultisigAddress {
+		let (privkey_a, privkey_b, privkey_c) = get_privkeys();
+
+		let secp_a = secp256k1::Secp256k1::new();
+		let pubkey_a = PublicKey::from_private_key(&secp_a, &privkey_a);
+
+		let secp_b = secp256k1::Secp256k1::new();
+		let pubkey_b = PublicKey::from_private_key(&secp_b, &privkey_b);
+
+		let secp_c = secp256k1::Secp256k1::new();
+		let pubkey_c = PublicKey::from_private_key(&secp_c, &privkey_c);
+
+		MultisigAddress {
+			lender_pubkey: pubkey_a,
+			borrower_pubkey: pubkey_b,
+			service_pubkey: pubkey_c,
+		}
+	}
+
+	#[test]
+	fn generate_address() {
+		let parties_keys = derive_address();
+		let address = parties_keys.create_p2wsh_address();
+
+		assert_eq!(address.address_type(), Some(AddressType::P2wsh));
+		assert_eq!(address.network(), &Regtest);
+	}	
+}
