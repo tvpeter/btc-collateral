@@ -54,3 +54,5 @@ base64 ="0.22.0"
 wallet = { path = "./wallet" }
 serde_json = "1.0.108"
 sqlx = { version = "*", features = ["runtime-actix-rustls", "macros", "postgres", "chrono", "uuid", "migrate"] }
+bitcoind = { version = "0.35.2", features = ["26_0"] }
+
