@@ -15,11 +15,7 @@ pub fn get_outpoints_total(inputs: &[OutPoint]) -> Result<f64, String> {
 
 	for input in inputs {
 		let outpoint_value = get_outpoint_value(input.txid, input.vout);
-		let value = match outpoint_value {
-			Ok(amount) => amount,
-			Err(err) => return Err(format!("{:?}", err)),
-		};
-
+		let value = outpoint_value.map_err(|e| format!("{:?}", e))?;
 		inputs_total += value;
 	}
 
@@ -90,14 +86,13 @@ pub trait Txn {
 		let input_amount = round_down(input_total, PRECISION);
 		let balance = round_down(input_amount - amount, PRECISION);
 		let change_amount = round_down(balance - fees, PRECISION);
-		let amount_in_hex = match Amount::from_btc(amount) {
-			Ok(amt) => amt,
-			Err(error) => return Err(format!("Error parsing given amount: {:?}", error)),
-		};
-		let change_amount_hex = match Amount::from_btc(change_amount) {
-			Ok(amt) => amt,
-			Err(err) => return Err(format!("Error parsing change amount: {:?}", err)),
-		};
+
+		let amount_in_hex = Amount::from_btc(amount)
+			.map_err(|err| format!("Error parsing given amount: {}", err))?;
+
+		let change_amount_hex = Amount::from_btc(change_amount)
+			.map_err(|e| format!("Error parsing change amount: {:?}", e))?;
+
 		Ok((amount_in_hex, change_amount_hex))
 	}
 }

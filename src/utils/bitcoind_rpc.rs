@@ -1,4 +1,5 @@
 use crate::constants::environment_vars;
+use anyhow::{anyhow, Result};
 use bitcoin::{Transaction, TxOut, Txid};
 use bitcoincore_rpc::{Auth, Client, Error, RpcApi};
 
@@ -22,14 +23,14 @@ pub fn connect_bitcoind() -> Client {
 	rpc_client
 }
 
-pub fn get_outpoint_value(txid: Txid, vout: u32) -> Result<f64, String> {
+pub fn get_outpoint_value(txid: Txid, vout: u32) -> Result<f64> {
 	let rpc = connect_bitcoind();
 
-	let outpoint_value = rpc.get_tx_out(&txid, vout, Some(false)).unwrap();
+	let outpoint_value = rpc.get_tx_out(&txid, vout, Some(false))?;
 
 	let result = match outpoint_value {
 		Some(amount) => amount,
-		None => return Err(format!("Error getting UTXO value for for txid: {:?}", txid)),
+		None => return Err(anyhow!("Error getting UTXO value for for txid: {:?}", txid)),
 	};
 
 	Ok(result.value.to_btc())
@@ -62,7 +63,7 @@ mod test {
 		let valid_vout: u32 = 0;
 		let invalid_vout: u32 = 1;
 
-		assert_eq!(get_outpoint_value(txid, valid_vout), Ok(1.56250000));
+		assert_eq!(get_outpoint_value(txid, valid_vout).unwrap(), 1.56250000);
 		assert!(get_outpoint_value(txid, invalid_vout).is_err());
 	}
 

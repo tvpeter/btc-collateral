@@ -1,17 +1,16 @@
 use crate::constants::set_network;
-use crate::utils::validate_publickeys::is_valid_pubkey;
 use bitcoin::opcodes::all::{OP_CHECKMULTISIG, OP_PUSHNUM_2, OP_PUSHNUM_3};
 use bitcoin::script::Builder;
 use bitcoin::{Address, PublicKey, ScriptBuf};
 
 #[derive(Debug, Clone)]
-pub struct PartiesPublicKeys {
+pub struct MultisigAddress {
 	pub borrower_pubkey: PublicKey,
 	pub lender_pubkey: PublicKey,
 	pub service_pubkey: PublicKey,
 }
 
-impl PartiesPublicKeys {
+impl MultisigAddress {
 	pub fn new(
 		borrower_pubkey: PublicKey,
 		lender_pubkey: PublicKey,
@@ -24,24 +23,8 @@ impl PartiesPublicKeys {
 		}
 	}
 
-	fn validate_publickeys(&self) {
-		if !is_valid_pubkey(&self.borrower_pubkey.to_bytes()) {
-			panic!("Invalid borrower public key");
-		}
-
-		if !is_valid_pubkey(&self.lender_pubkey.to_bytes()) {
-			panic!("Invalid lender public key");
-		}
-
-		if !is_valid_pubkey(&self.service_pubkey.to_bytes()) {
-			panic!("Invalid service public key");
-		}
-	}
-
-	///OP_2  [pubkey1] [pubkey2] [pubkey3] OP_3 OP_CHECKMULTISIG
+	///Redeem_script: OP_2  [pubkey1] [pubkey2] [pubkey3] OP_3 OP_CHECKMULTISIG
 	pub fn redeem_script(&self) -> ScriptBuf {
-		self.validate_publickeys();
-
 		Builder::new()
 			.push_opcode(OP_PUSHNUM_2)
 			.push_key(&self.borrower_pubkey)
@@ -52,15 +35,9 @@ impl PartiesPublicKeys {
 			.into_script()
 	}
 
-	pub fn create_p2sh_address(&self) -> Result<Address, String> {
-		let redeem_script = self.redeem_script();
-		let p2sh_address = Address::p2sh(&redeem_script, set_network());
-		p2sh_address.map_err(|err| format!("Error creating p2sh address: {:?}", err))
-	}
-
+	/// P2WSH: OP_HASH160 <20-byte hash of redeem script> OP_EQUAL
 	pub fn create_p2wsh_address(&self) -> Address {
-		let redeem_script = self.redeem_script();
-		Address::p2wsh(&redeem_script, set_network())
+		Address::p2wsh(&self.redeem_script(), set_network())
 	}
 }
 
@@ -72,8 +49,8 @@ mod tests {
 
 	use super::*;
 
-	fn valid_publickeys() -> PartiesPublicKeys {
-		PartiesPublicKeys {
+	fn valid_publickeys() -> MultisigAddress {
+		MultisigAddress {
 			borrower_pubkey: PublicKey::from_str(
 				"02f0eaa04e609b0044ef1fe09a350dc4b744a5a8604a6fa77bc9bf6443ea50739f",
 			)
@@ -92,26 +69,7 @@ mod tests {
 	#[test]
 	fn test_redeem_script() {
 		let combined_keys = valid_publickeys();
-
 		assert_eq!(combined_keys.redeem_script().to_hex_string(), "522102f0eaa04e609b0044ef1fe09a350dc4b744a5a8604a6fa77bc9bf6443ea50739f21037c60db011a840523f216e7198054ef071c5acd3d4b466cf2658b7faf30c11e332102ca49f36d3de1e135e033052611dd0873af55b57f07d5d0d1090ceb267ac34e6b53ae");
-	}
-
-	#[test]
-	fn test_validate_publickeys() {
-		let valid_instance = valid_publickeys();
-		assert!(std::panic::catch_unwind(|| valid_instance.validate_publickeys()).is_ok());
-	}
-
-	#[test]
-	fn test_create_p2sh_address() {
-		let valid_instance = valid_publickeys();
-		let result = valid_instance.create_p2sh_address();
-		let network = set_network();
-
-		assert!(result.is_ok());
-		let generated_address = result.unwrap();
-		assert_eq!(generated_address.network(), &network);
-		assert_eq!(generated_address.address_type(), Some(AddressType::P2sh))
 	}
 
 	#[test]

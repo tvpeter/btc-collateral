@@ -10,11 +10,11 @@ use std::collections::BTreeMap;
 
 #[derive(Debug, Clone)]
 pub struct RedeemingTxnPSBT {
-	receiving_address: String,
-	amount: f64,
-	inputs: Vec<OutPoint>,
+	pub receiving_address: String,
+	pub amount: f64,
+	pub inputs: Vec<OutPoint>,
 	// we might charge a fee of 0.025% on the redemption amount
-	change_address: String,
+	pub change_address: String,
 }
 
 impl RedeemingTxnPSBT {
