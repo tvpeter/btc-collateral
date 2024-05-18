@@ -34,7 +34,7 @@ impl RedeemingTxnPSBT {
 
 	pub fn construct_trxn(&self) -> Result<Transaction, String> {
 		let input_total;
-		match get_outpoints_total(&self.inputs) {
+		match get_outpoints_total(&self.inputs, None) {
 			Ok(amount) => {
 				if amount < self.amount {
 					return Err(
@@ -72,7 +72,7 @@ impl RedeemingTxnPSBT {
 
 		for input in &self.inputs {
 			let (segwit_tx_status, tx_outpout, txn) =
-				get_transaction_output(input.txid, input.vout)
+				get_transaction_output(input.txid, input.vout, None)
 					.expect("Error getting transaction details");
 			if segwit_tx_status {
 				inputs.push(Input {
