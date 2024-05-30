@@ -86,7 +86,7 @@ pub fn sign_psbt(mut psbt: Psbt, xprv: Xpriv, derivation: &DerivationPath) -> Re
 
 #[cfg(test)]
 mod tests {
-	use crate::domain::MultisigAddress;
+	use crate::domain::PartiesPubKeys;
 	use bitcoin::{bip32::Xpriv, secp256k1, AddressType, Network::Regtest, PrivateKey, PublicKey};
 
 	fn get_xprivs() -> (Xpriv, Xpriv, Xpriv) {
@@ -103,7 +103,7 @@ mod tests {
 		(x_priv_a.to_priv(), x_priv_b.to_priv(), x_priv_c.to_priv())
 	}
 
-	fn derive_address() -> MultisigAddress {
+	fn derive_address() -> PartiesPubKeys {
 		let (privkey_a, privkey_b, privkey_c) = get_privkeys();
 
 		let secp_a = secp256k1::Secp256k1::new();
@@ -115,7 +115,7 @@ mod tests {
 		let secp_c = secp256k1::Secp256k1::new();
 		let pubkey_c = PublicKey::from_private_key(&secp_c, &privkey_c);
 
-		MultisigAddress {
+		PartiesPubKeys {
 			lender_pubkey: pubkey_a,
 			borrower_pubkey: pubkey_b,
 			service_pubkey: pubkey_c,

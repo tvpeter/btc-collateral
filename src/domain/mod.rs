@@ -3,4 +3,4 @@ pub mod generate_address;
 pub mod redeeming_transaction;
 pub mod sign_psbt;
 
-pub use generate_address::MultisigAddress;
+pub use generate_address::PartiesPubKeys;

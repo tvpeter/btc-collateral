@@ -4,13 +4,13 @@ use bitcoin::script::Builder;
 use bitcoin::{Address, PublicKey, ScriptBuf};
 
 #[derive(Debug, Clone)]
-pub struct MultisigAddress {
+pub struct PartiesPubKeys {
 	pub borrower_pubkey: PublicKey,
 	pub lender_pubkey: PublicKey,
 	pub service_pubkey: PublicKey,
 }
 
-impl MultisigAddress {
+impl PartiesPubKeys {
 	pub fn new(
 		borrower_pubkey: PublicKey,
 		lender_pubkey: PublicKey,
@@ -49,8 +49,8 @@ mod tests {
 
 	use super::*;
 
-	fn valid_publickeys() -> MultisigAddress {
-		MultisigAddress {
+	fn valid_publickeys() -> PartiesPubKeys {
+		PartiesPubKeys {
 			borrower_pubkey: PublicKey::from_str(
 				"02f0eaa04e609b0044ef1fe09a350dc4b744a5a8604a6fa77bc9bf6443ea50739f",
 			)
