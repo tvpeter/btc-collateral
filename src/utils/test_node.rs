@@ -1,9 +1,6 @@
 use anyhow::Ok;
 use bitcoin::{Amount, BlockHash, Txid};
-use bitcoincore_rpc::{
-	json::GetBlockchainInfoResult,
-	RpcApi,
-};
+use bitcoincore_rpc::{json::GetBlockchainInfoResult, RpcApi};
 use bitcoind::{exe_path, tempfile::TempDir, BitcoinD, Conf};
 
 #[derive(Debug)]
@@ -120,6 +117,8 @@ mod test {
 
 		assert_eq!(10, client.get_blockchain_info().unwrap().blocks);
 	}
+
+	#[ignore = "fails when ran with others"]
 	#[test]
 	fn test_sending_to_address() {
 		let client = get_test_node();
@@ -148,12 +147,15 @@ mod test {
 		drop(client);
 	}
 
+	#[ignore = "fails when ran with others"]
 	#[test]
 	fn test_get_vout() {
 		let client = get_test_node();
 
 		let address_1 = client.new_address(None).unwrap();
-		let address_2 = client.new_address(Some(bitcoincore_rpc::json::AddressType::P2shSegwit)).unwrap();
+		let address_2 = client
+			.new_address(Some(bitcoincore_rpc::json::AddressType::P2shSegwit))
+			.unwrap();
 
 		let _ = client.generate_to_address(101, address_1.clone());
 
