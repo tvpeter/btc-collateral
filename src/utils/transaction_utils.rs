@@ -15,7 +15,7 @@ pub fn get_outpoints_total(inputs: &[OutPoint], client: Option<&Client>) -> Resu
 	let mut inputs_total: f64 = 0.0;
 
 	for input in inputs {
-		let outpoint_value = if client.is_some() && set_network() == Network::Regtest {
+		let outpoint_value = if set_network() == Network::Regtest {
 			let node_client = client.expect("No client was supplied");
 			get_outpoint_value(input.txid, input.vout, Some(node_client))
 		} else {
