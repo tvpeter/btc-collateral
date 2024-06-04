@@ -1,7 +1,7 @@
 use anyhow::Ok;
 use bitcoin::{Amount, BlockHash, Txid};
 use bitcoincore_rpc::{
-	json::{GetBlockchainInfoResult, GetTransactionResultDetailCategory},
+	json::GetBlockchainInfoResult,
 	RpcApi,
 };
 use bitcoind::{exe_path, tempfile::TempDir, BitcoinD, Conf};
@@ -77,18 +77,7 @@ impl TestNode {
 	pub fn get_vout(&self, txid: Txid) -> anyhow::Result<u32> {
 		let tx_details = self.bitcoind.client.get_transaction(&txid, None)?;
 
-		let vout = tx_details
-			.details
-			.iter()
-			.filter_map(|item| {
-				if item.category == GetTransactionResultDetailCategory::Receive {
-					Some(item.vout)
-				} else {
-					None
-				}
-			})
-			.collect::<Vec<u32>>();
-		Ok(vout[0])
+		Ok(tx_details.details[0].vout)
 	}
 }
 
@@ -131,7 +120,6 @@ mod test {
 
 		assert_eq!(10, client.get_blockchain_info().unwrap().blocks);
 	}
-	#[ignore = "failing when run with all the tests but passes as a single or this module"]
 	#[test]
 	fn test_sending_to_address() {
 		let client = get_test_node();
@@ -158,5 +146,25 @@ mod test {
 
 		assert_ne!(None, Some(txid));
 		drop(client);
+	}
+
+	#[test]
+	fn test_get_vout() {
+		let client = get_test_node();
+
+		let address_1 = client.new_address(None).unwrap();
+		let address_2 = client.new_address(Some(bitcoincore_rpc::json::AddressType::P2shSegwit)).unwrap();
+
+		let _ = client.generate_to_address(101, address_1.clone());
+
+		assert_eq!(50.0, client.get_balance().unwrap().to_btc());
+
+		let txid = client.send(&address_2, Amount::from_int_btc(10)).unwrap();
+
+		let _ = client.generate_to_address(10, address_1);
+
+		let vout = client.get_vout(txid).unwrap();
+
+		assert!(vout.ge(&0));
 	}
 }
